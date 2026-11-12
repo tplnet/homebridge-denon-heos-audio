@@ -7,6 +7,8 @@ import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import type { DeviceConfig } from "./config.js";
 
+const SUPPORTED_BRANDS = ["denon", "marantz"];
+
 export class DenonAudioPlatform implements DynamicPlatformPlugin {
   public readonly rawLog: Logger;
   public readonly log: Logger;
@@ -163,8 +165,9 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     }
     this.ssdpSeenSerialNumbers.add(serial);
 
+    // HEOS devices are made by Denon and Marantz (Sound United / Masimo); both use the same control protocols.
     const identification = [device.manufacturer, device.manufacturerURL, device.modelName, device.friendlyName].join(" ").toLowerCase();
-    if (!identification.includes("denon")) {
+    if (!SUPPORTED_BRANDS.some((brand) => identification.includes(brand))) {
       return;
     }
 
@@ -191,7 +194,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     }
 
     this.log.success("-------------------------------------------------------");
-    this.log.success("Found DENON device in local network:");
+    this.log.success("Found Denon / Marantz device in local network:");
     this.log.success("Friendly name:", device.friendlyName);
     this.log.success("Model name:   ", device.modelName);
     this.log.success("Serial number:", serial);

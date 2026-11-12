@@ -3,21 +3,22 @@
   "displayName": "Homebridge Denon Heos Audio",
   "type": "module",
   "version": "1.0.0-beta.1",
-  "description": "Control your Denon speakers via AVR Control and/or HeosCLI",
+  "description": "Control your Denon and Marantz HEOS speakers, amplifiers and AVRs via AVR Control and/or HEOS CLI",
   "author": "hov3rcraft",
   "license": "MIT",
-  "homepage": "https://github.com/hov3rcraft/homebridge-denon-heos-audio#readme",
+  "homepage": "https://github.com/tplnet/homebridge-denon-heos-audio#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hov3rcraft/homebridge-denon-heos-audio.git"
+    "url": "git+https://github.com/tplnet/homebridge-denon-heos-audio.git"
   },
   "bugs": {
-    "url": "https://github.com/hov3rcraft/homebridge-denon-heos-audio/issues"
+    "url": "https://github.com/tplnet/homebridge-denon-heos-audio/issues"
   },
   "keywords": [
     "homebridge",
     "homebridge-plugin",
     "denon",
+    "marantz",
     "heos",
     "avr",
     "speaker",
@@ -33,6 +34,7 @@
   },
   "scripts": {
     "build": "rimraf ./dist && tsc",
+    "prepare": "npm run build",
     "lint": "eslint . --max-warnings=0",
     "test": "npm run build && node --test \"test/unit/**/*.test.js\"",
     "prepublishOnly": "npm run lint && npm run build",
