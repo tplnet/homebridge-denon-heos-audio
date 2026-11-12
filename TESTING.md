@@ -9,7 +9,7 @@ This checklist covers what can only be verified with real hardware.
 | --- | --- |
 | Denon Home 150 | HEOS CLI |
 | Denon Home 250 | HEOS CLI |
-| Denon Home Amp | HEOS CLI |
+| Denon Home Amp | Hybrid, AVR Control, HEOS CLI |
 | Marantz Cinema 60 | Hybrid, AVR Control, HEOS CLI |
 
 Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep the log open while testing.
@@ -17,7 +17,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 ## 1. Discovery
 
 - [ ] Every device is listed in the log with the correct name, model, serial number and IP address.
-- [ ] The listed supported modes are plausible (Denon Home: `HEOSCLI`; Cinema 60: `AVRCONTROL, HEOSCLI`).
+- [ ] The listed supported modes are plausible (Denon Home 150 / 250: `HEOSCLI`; Home Amp and Cinema 60: `AVRCONTROL, HEOSCLI`).
 
 ## 2. Startup
 
@@ -46,7 +46,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 
 Suggested inputs to configure:
 
-- Denon Home Amp: `hdmi_arc_1`, `optical_in_1`, `aux_in_1`
+- Denon Home Amp (Hybrid / AVR Control): check the IDs in the debug log (`SI…`) after switching inputs once
 - Denon Home 150 / 250: `aux_in_1`
 - Marantz Cinema 60 (Hybrid / AVR Control): `TV`, `BD`, `GAME`, `MPLAY`
 

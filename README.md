@@ -36,7 +36,7 @@ Devices used for testing this fork:
 | --- | --- | --- |
 | Denon Home 150 | Smart speaker | HEOS CLI |
 | Denon Home 250 | Smart speaker | HEOS CLI |
-| Denon Home Amp | Streaming amplifier | HEOS CLI |
+| Denon Home Amp | Streaming amplifier | Hybrid |
 | Marantz Cinema 60 | AV receiver | Hybrid |
 
 Not sure what your device supports? Turn on [device discovery](#1-find-your-device): it lists every device found and the protocols it supports.
@@ -45,9 +45,9 @@ Not sure what your device supports? Turn on [device discovery](#1-find-your-devi
 
 | Protocol | Best for | Power button in Home | Play / pause / skip | Volume, mute, inputs |
 | --- | --- | --- | --- | --- |
-| **HEOS CLI** | Speakers and streaming amps (Denon Home series, Home Amp, …) | Starts / stops **playback** | ✅ | ✅ |
+| **HEOS CLI** | Smart speakers (Denon Home 150 / 250 / 350, …) | Starts / stops **playback** | ✅ | ✅ |
 | **AVR Control** | Older AV receivers without HEOS | Real power on / standby | ❌ | ✅ |
-| **Hybrid** | AV receivers with HEOS (e.g. Marantz Cinema series, Denon AVR-X) | Real power on / standby | ✅ | ✅ |
+| **Hybrid** | AV receivers and amplifiers with HEOS (e.g. Marantz Cinema series, Denon AVR-X, Denon Home Amp) | Real power on / standby | ✅ | ✅ |
 
 **Why does "power" mean "playback" with HEOS CLI?** HEOS speakers have no real standby command. The plugin therefore treats "playing" as on and "stopped/paused" as off.
 
