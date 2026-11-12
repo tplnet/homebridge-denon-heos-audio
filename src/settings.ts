@@ -6,4 +6,4 @@ export const PLATFORM_NAME = "DenonHeosAudio";
 /**
  * This must match the name of your plugin as defined the package.json `name` property
  */
-export const PLUGIN_NAME = "homebridge-denon-heos-audio";
+export const PLUGIN_NAME = "@tplnet/homebridge-denon-heos-audio";

@@ -55,19 +55,28 @@ Not sure what your device supports? Turn on [device discovery](#1-find-your-devi
 
 ## Installation
 
-This fork is not published on npm. Install it directly from GitHub.
+This fork is published under its own package name, `@tplnet/homebridge-denon-heos-audio`, so the Homebridge UI does not mix it up with the original plugin.
+It is not on npm. Install it directly from GitHub or from a package file.
 
-1. If the original plugin is installed, uninstall it first. Both use the same package name.
-2. Open the **Homebridge UI → Terminal** (or SSH into your Homebridge host) and run:
+1. If the original plugin `homebridge-denon-heos-audio` is installed, remove it **in the terminal** (removing it in the UI may also delete its configuration):
 
    ```bash
-   npm install -g github:tplnet/homebridge-denon-heos-audio
+   npm uninstall homebridge-denon-heos-audio
+   ```
+
+   Your existing configuration keeps working: both plugins use the platform name `DenonHeosAudio`.
+2. Open the **Homebridge UI → Terminal** and run, in the Homebridge storage directory (e.g. `/var/lib/homebridge`, or `/volume1/homebridge` on a Synology NAS):
+
+   ```bash
+   npm install github:tplnet/homebridge-denon-heos-audio
    ```
 
    The plugin is compiled automatically during installation.
+
+   Alternatively, build a package file with `npm pack` on your computer, copy it to the Homebridge host and run `npm install ./tplnet-homebridge-denon-heos-audio-<version>.tgz`.
 3. Restart Homebridge.
 
-To update later, run the same command again and restart Homebridge.
+To update later, run the same install command again and restart Homebridge.
 
 ## Setup in 4 steps
 
