@@ -4,14 +4,25 @@ import {
   ConnectionTimeoutException,
   DefaultInput,
   DenonClient,
-  findMapByValue,
   findValueByMap,
   InvalidResponseException,
   isPlaying,
+  mapResponse,
   Playing,
+  ProtocolCommand,
   RaceStatus,
 } from "./denonClient.js";
 import * as DenonProtocol from "./denonProtocol.js";
+
+interface HeosResponse {
+  heos: {
+    command: string;
+    result?: string;
+    success?: string;
+    message?: string;
+  };
+  payload?: unknown;
+}
 
 export class DenonClientHeosCli extends DenonClient {
   public readonly controlMode = DenonProtocol.ControlMode.HEOSCLI;
@@ -304,188 +315,143 @@ export class DenonClientHeosCli extends DenonClient {
       DenonClientHeosCli.PROTOCOL.EVENT_SUB.VALUES.ON.VALUE,
     );
     const response = await this.sendUnchecked(commandStr, DenonClientHeosCli.PROTOCOL.EVENT_SUB.SET.COMMAND, DenonClientHeosCli.PROTOCOL.EVENT_SUB.SET.EXP_RES);
-    const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.EVENT_SUB.VALUES, response);
+    const enabled = mapResponse(DenonClientHeosCli.PROTOCOL.EVENT_SUB.VALUES, response, "event subscription state");
 
-    if (mappedValue === undefined) {
-      throw new InvalidResponseException(
-        "No valid response!",
-        Object.values(DenonClientHeosCli.PROTOCOL.EVENT_SUB.VALUES).map((value) => value.VALUE),
-        response,
-      );
-    }
-
-    if (response !== DenonClientHeosCli.PROTOCOL.EVENT_SUB.VALUES.ON.VALUE) {
+    if (!enabled) {
       throw new CommandFailedException(commandStr);
     }
   }
 
   protected async sendCommand(
-    command: any,
+    command: ProtocolCommand,
     commandMode: CommandMode,
     { value, passPayload = false }: { value?: string; passPayload?: boolean },
   ): Promise<string> {
-    if (!this.player_id) {
+    if (this.player_id === undefined) {
       await this.findPlayerId();
     }
     return super.sendCommand(command, commandMode, { pid: this.player_id, value: value, passPayload: passPayload });
   }
 
   protected responseRouter(response: string) {
-    let r_obj: any;
+    let r_obj: HeosResponse;
     try {
       r_obj = JSON.parse(response);
     } catch {
       throw new InvalidResponseException("Received a response that is not valid JSON!", undefined, response);
     }
 
-    if (r_obj.heos === undefined || r_obj.heos.command === undefined) {
+    if (typeof r_obj?.heos?.command !== "string") {
       throw new InvalidResponseException("Received response that does not follow HeosCLI specifications", undefined, response);
     }
 
-    if (this.responseCallback && this.responseCallback.command === r_obj.heos.command.trim()) {
-      if (r_obj.heos.success !== undefined && r_obj.heos.success !== "success") {
-        this.debugLog("Received failure response:", response);
-        this.rejectPendingResponse(new CommandFailedException(this.responseCallback.command));
+    const pending = this.responseCallback;
+    if (!pending || pending.command !== r_obj.heos.command.trim()) {
+      this.genericResponseHandler(r_obj);
+      return;
+    }
+
+    // The HEOS CLI specification uses "result"; "success" is checked for backwards compatibility.
+    const result = r_obj.heos.result ?? r_obj.heos.success;
+    if (result !== undefined && result !== "success") {
+      this.debugLog("Received failure response:", response);
+      this.rejectPendingResponse(new CommandFailedException(pending.command));
+      return;
+    }
+
+    const message = r_obj.heos.message;
+    if (message === undefined) {
+      this.genericResponseHandler(r_obj);
+      return;
+    }
+
+    const pid_match = message.match(DenonClientHeosCli.PROTOCOL.PID_REGEX);
+    const message_match = !pid_match || Number(pid_match[1]) === this.player_id ? message.match(pending.expectedResponse) : null;
+    if (!message_match) {
+      this.genericResponseHandler(r_obj);
+      return;
+    }
+
+    let out = message_match.length > 1 ? message_match[1] : message;
+    if (pending.passPayload) {
+      if (r_obj.payload === undefined) {
+        this.rejectPendingResponse(new InvalidResponseException("Received a response that does not include a payload!", undefined, response));
         return;
       }
+      out = JSON.stringify(r_obj.payload);
+    }
 
-      if (r_obj.heos.message !== undefined) {
-        let out: string | undefined = undefined;
-        const pid_match = r_obj.heos.message.match(DenonClientHeosCli.PROTOCOL.PID_REGEX);
-        if (!pid_match || Number(pid_match[1]) === this.player_id) {
-          const message_match = r_obj.heos.message.match(this.responseCallback.expectedResponse);
-          if (message_match) {
-            out = message_match.length > 1 ? message_match[1] : r_obj.heos.message;
-          }
-        }
-
-        if (out !== undefined) {
-          if (this.responseCallback.passPayload) {
-            if (r_obj.payload === undefined) {
-              this.rejectPendingResponse(new InvalidResponseException("Received a response that does not include a payload!", undefined, response));
-              return;
-            }
-            out = JSON.stringify(r_obj.payload);
-          }
-          this.debugLog("Received response:", response);
-
-          this.responseCallback.callback(out);
-          this.responseCallback = undefined;
-          if (this.params.all_responses_to_generic) {
-            this.genericResponseHandler(r_obj);
-          }
-        } else {
-          this.genericResponseHandler(r_obj);
-        }
-      } else {
-        this.genericResponseHandler(r_obj);
-      }
-    } else {
+    this.debugLog("Received response:", response);
+    this.responseCallback = undefined;
+    pending.callback(out);
+    if (this.params.all_responses_to_generic) {
       this.genericResponseHandler(r_obj);
     }
   }
 
-  private genericResponseHandler(r_obj: any) {
-    if (!r_obj.heos.command.match(DenonClientHeosCli.PROTOCOL.GLOBAL_CHANGE_EVENT_REGEX)) {
+  private genericResponseHandler(r_obj: HeosResponse) {
+    const protocol = DenonClientHeosCli.PROTOCOL;
+    const command = r_obj.heos.command;
+    const message = r_obj.heos.message;
+
+    if (!protocol.GLOBAL_CHANGE_EVENT_REGEX.test(command)) {
       return; // not an event
     }
 
-    if (!r_obj.heos.message) {
-      return; // global events not concerned without a particular player id are not handled
+    if (!message) {
+      return; // global events not concerned with a particular player id are not handled
     }
 
-    const pid_match = r_obj.heos.message.match(DenonClientHeosCli.PROTOCOL.PID_REGEX);
+    const pid_match = message.match(protocol.PID_REGEX);
     if (!pid_match || Number(pid_match[1]) !== this.player_id) {
       return; // not this player
     }
 
     this.debugLog("Received change event:", JSON.stringify(r_obj));
 
-    // Play state
-    if (r_obj.heos.command === DenonClientHeosCli.PROTOCOL.PLAY_STATE.EVENT.COMMAND) {
-      const match = r_obj.heos.message.match(DenonClientHeosCli.PROTOCOL.PLAY_STATE.EVENT.EXP_RES);
-
+    const matchEvent = (regex: RegExp, description: string): string => {
+      const match = message.match(regex);
       if (!match) {
-        throw new InvalidResponseException(
-          "Unexpected play state",
-          Object.values(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES).map((value) => value.VALUE),
-          r_obj.heos.message,
-        );
+        throw new InvalidResponseException(`Unexpected ${description}`, [regex.toString()], message);
+      }
+      return match[1];
+    };
+
+    switch (command) {
+      case protocol.PLAY_STATE.EVENT.COMMAND: {
+        const playing = mapResponse(protocol.PLAY_STATE.VALUES, matchEvent(protocol.PLAY_STATE.EVENT.EXP_RES, "play state"), "play state");
+        this.powerUpdateCallback?.(isPlaying[playing]);
+        break;
       }
 
-      const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES, match[1]);
-      if (mappedValue === undefined) {
-        throw new InvalidResponseException(
-          "Unexpected play state",
-          Object.values(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES).map((value) => value.VALUE),
-          r_obj.heos.message,
-        );
+      // mute and volume share the same event
+      case protocol.VOLUME.EVENT.COMMAND: {
+        const mute = mapResponse(protocol.MUTE.VALUES, matchEvent(protocol.MUTE.EVENT.EXP_RES, "mute state"), "mute state");
+        this.muteUpdateCallback?.(mute);
+        this.volumeUpdateCallback?.(Number(matchEvent(protocol.VOLUME.EVENT.EXP_RES, "volume level")));
+        break;
       }
 
-      if (this.powerUpdateCallback) {
-        this.powerUpdateCallback(isPlaying[mappedValue as Playing]);
-      }
-    }
-
-    // Mute
-    if (r_obj.heos.command === DenonClientHeosCli.PROTOCOL.MUTE.EVENT.COMMAND) {
-      const match = r_obj.heos.message.match(DenonClientHeosCli.PROTOCOL.MUTE.EVENT.EXP_RES);
-
-      if (!match) {
-        throw new InvalidResponseException(
-          "Unexpected mute state",
-          Object.values(DenonClientHeosCli.PROTOCOL.MUTE.VALUES).map((value) => value.VALUE),
-          r_obj.heos.message,
-        );
-      }
-
-      const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.MUTE.VALUES, match[1]);
-      if (mappedValue === undefined) {
-        throw new InvalidResponseException(
-          "Unexpected mute state",
-          Object.values(DenonClientHeosCli.PROTOCOL.MUTE.VALUES).map((value) => value.VALUE),
-          r_obj.heos.message,
-        );
-      }
-
-      if (this.muteUpdateCallback) {
-        this.muteUpdateCallback(mappedValue);
-      }
-    }
-
-    // Volume
-    if (r_obj.heos.command === DenonClientHeosCli.PROTOCOL.VOLUME.EVENT.COMMAND) {
-      const match = r_obj.heos.message.match(DenonClientHeosCli.PROTOCOL.VOLUME.EVENT.EXP_RES);
-
-      if (!match) {
-        throw new InvalidResponseException("Unexpected volume level", [DenonClientHeosCli.PROTOCOL.VOLUME.EVENT.EXP_RES.toString()], r_obj.heos.message);
-      }
-
-      if (this.volumeUpdateCallback) {
-        this.volumeUpdateCallback(Number(match[1]));
-      }
-    }
-
-    // Input
-    if (r_obj.heos.command === DenonClientHeosCli.PROTOCOL.INPUT.EVENT.COMMAND) {
-      // 'now playing changed' only gives us an indication that something has changed, but no information on what has changed.
-      // Therefore, we need to actively query the current input.
-      if (this.inputUpdateCallback) {
-        this.sendCommand(DenonClientHeosCli.PROTOCOL.INPUT, CommandMode.GET, { passPayload: true })
-          .then((payload_str) => {
-            const inputID = DenonClientHeosCli.inputPayloadToInputID(payload_str);
-            this.inputUpdateCallback?.(inputID);
-          })
-          .catch((error) => {
-            this.debugLog("Error while querying the current input after a change event:", error instanceof Error ? error.message : error);
-          });
+      case protocol.INPUT.EVENT.COMMAND: {
+        // 'now playing changed' only gives us an indication that something has changed, but no information on what has changed.
+        // Therefore, we need to actively query the current input.
+        if (this.inputUpdateCallback) {
+          this.sendCommand(protocol.INPUT, CommandMode.GET, { passPayload: true })
+            .then((payload_str) => {
+              this.inputUpdateCallback?.(DenonClientHeosCli.inputPayloadToInputID(payload_str));
+            })
+            .catch((error) => {
+              this.debugLog("Error while querying the current input after a change event:", error instanceof Error ? error.message : error);
+            });
+        }
+        break;
       }
     }
   }
 
   private async getPlayingInternal(): Promise<Playing> {
     const response = await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_STATE, CommandMode.GET, {});
-    const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES, response);
+    const mappedValue = mapResponse(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES, response, "play state");
     return mappedValue;
   }
 
@@ -501,7 +467,7 @@ export class DenonClientHeosCli extends DenonClient {
     const response = await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_STATE, CommandMode.SET, {
       value: findValueByMap(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES, playing),
     });
-    const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES, response);
+    const mappedValue = mapResponse(DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES, response, "play state");
     return mappedValue;
   }
 
@@ -532,7 +498,7 @@ export class DenonClientHeosCli extends DenonClient {
 
   public async getMute(raceStatus?: RaceStatus): Promise<boolean> {
     const response = await this.sendCommand(DenonClientHeosCli.PROTOCOL.MUTE, CommandMode.GET, {});
-    const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.MUTE.VALUES, response);
+    const mappedValue = mapResponse(DenonClientHeosCli.PROTOCOL.MUTE.VALUES, response, "mute state");
     if (raceStatus && !raceStatus.isRunning() && this.muteUpdateCallback) {
       this.muteUpdateCallback(mappedValue);
       this.debugLog(`getMute was late to the party [race id: ${raceStatus.raceId}].`);
@@ -545,7 +511,7 @@ export class DenonClientHeosCli extends DenonClient {
       value: findValueByMap(DenonClientHeosCli.PROTOCOL.MUTE.VALUES, mute),
     });
 
-    const mappedValue = findMapByValue(DenonClientHeosCli.PROTOCOL.MUTE.VALUES, response);
+    const mappedValue = mapResponse(DenonClientHeosCli.PROTOCOL.MUTE.VALUES, response, "mute state");
     if (this.muteUpdateCallback) {
       this.muteUpdateCallback(mappedValue);
     }

@@ -3,9 +3,8 @@ import {
   ConnectionTimeoutException,
   DefaultInput,
   DenonClient,
-  findMapByValue,
   findValueByMap,
-  InvalidResponseException,
+  mapResponse,
   Playing,
 } from "./denonClient.js";
 import * as DenonProtocol from "./denonProtocol.js";
@@ -201,65 +200,36 @@ export class DenonClientAvrControl extends DenonClient {
 
   private genericResponseHandler(response: string) {
     this.debugLog("Received data event:", response);
+    const protocol = DenonClientAvrControl.PROTOCOL;
 
-    // Power
-    let match = response.match(DenonClientAvrControl.PROTOCOL.POWER.GET.EXP_RES);
+    let match = response.match(protocol.POWER.GET.EXP_RES);
     if (match) {
-      const mappedValue = findMapByValue(DenonClientAvrControl.PROTOCOL.POWER.VALUES, match[1]);
-      if (mappedValue === undefined) {
-        throw new InvalidResponseException(
-          "Unexpected power state",
-          Object.values(DenonClientAvrControl.PROTOCOL.POWER.VALUES).map((value) => value.VALUE),
-          match[1],
-        );
-      }
-
-      if (this.powerUpdateCallback) {
-        this.powerUpdateCallback(mappedValue);
-      }
+      this.powerUpdateCallback?.(mapResponse(protocol.POWER.VALUES, match[1], "power state"));
       return;
     }
 
-    // Mute
-    match = response.match(DenonClientAvrControl.PROTOCOL.MUTE.GET.EXP_RES);
+    match = response.match(protocol.MUTE.GET.EXP_RES);
     if (match) {
-      const mappedValue = findMapByValue(DenonClientAvrControl.PROTOCOL.MUTE.VALUES, match[1]);
-      if (mappedValue === undefined) {
-        throw new InvalidResponseException(
-          "Unexpected mute state",
-          Object.values(DenonClientAvrControl.PROTOCOL.MUTE.VALUES).map((value) => value.VALUE),
-          match[1],
-        );
-      }
-
-      if (this.muteUpdateCallback) {
-        this.muteUpdateCallback(mappedValue);
-      }
+      this.muteUpdateCallback?.(mapResponse(protocol.MUTE.VALUES, match[1], "mute state"));
       return;
     }
 
-    // Volume
-    match = response.match(DenonClientAvrControl.PROTOCOL.VOLUME.GET.EXP_RES);
+    match = response.match(protocol.VOLUME.GET.EXP_RES);
     if (match) {
-      if (this.volumeUpdateCallback) {
-        this.volumeUpdateCallback(Number(match[1]));
-      }
+      this.volumeUpdateCallback?.(Number(match[1]));
       return;
     }
 
-    // Input
-    match = response.match(DenonClientAvrControl.PROTOCOL.INPUT.GET.EXP_RES);
+    match = response.match(protocol.INPUT.GET.EXP_RES);
     if (match) {
-      if (this.inputUpdateCallback) {
-        this.inputUpdateCallback(match[1]);
-      }
+      this.inputUpdateCallback?.(match[1]);
       return;
     }
   }
 
   public async getPower(): Promise<boolean> {
     const response = await this.sendCommand(DenonClientAvrControl.PROTOCOL.POWER, CommandMode.GET, {});
-    const mappedValue = findMapByValue(DenonClientAvrControl.PROTOCOL.POWER.VALUES, response);
+    const mappedValue = mapResponse(DenonClientAvrControl.PROTOCOL.POWER.VALUES, response, "power state");
     return mappedValue;
   }
 
@@ -267,7 +237,7 @@ export class DenonClientAvrControl extends DenonClient {
     const response = await this.sendCommand(DenonClientAvrControl.PROTOCOL.POWER, CommandMode.SET, {
       value: findValueByMap(DenonClientAvrControl.PROTOCOL.POWER.VALUES, power),
     });
-    const mappedValue = findMapByValue(DenonClientAvrControl.PROTOCOL.POWER.VALUES, response);
+    const mappedValue = mapResponse(DenonClientAvrControl.PROTOCOL.POWER.VALUES, response, "power state");
     return mappedValue;
   }
 
@@ -291,7 +261,7 @@ export class DenonClientAvrControl extends DenonClient {
 
   public async getMute(): Promise<boolean> {
     const response = await this.sendCommand(DenonClientAvrControl.PROTOCOL.MUTE, CommandMode.GET, {});
-    const mappedValue = findMapByValue(DenonClientAvrControl.PROTOCOL.MUTE.VALUES, response);
+    const mappedValue = mapResponse(DenonClientAvrControl.PROTOCOL.MUTE.VALUES, response, "mute state");
     return mappedValue;
   }
 
@@ -299,7 +269,7 @@ export class DenonClientAvrControl extends DenonClient {
     const response = await this.sendCommand(DenonClientAvrControl.PROTOCOL.MUTE, CommandMode.SET, {
       value: findValueByMap(DenonClientAvrControl.PROTOCOL.MUTE.VALUES, mute),
     });
-    const mappedValue = findMapByValue(DenonClientAvrControl.PROTOCOL.MUTE.VALUES, response);
+    const mappedValue = mapResponse(DenonClientAvrControl.PROTOCOL.MUTE.VALUES, response, "mute state");
     return mappedValue;
   }
 

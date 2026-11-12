@@ -11,6 +11,12 @@ export enum ControlMode {
   HYBRID = -1,
 }
 
+export const CONTROL_MODE_BY_NAME: Record<keyof typeof ControlMode, ControlMode> = {
+  AVRCONTROL: ControlMode.AVRCONTROL,
+  HEOSCLI: ControlMode.HEOSCLI,
+  HYBRID: ControlMode.HYBRID,
+};
+
 export const CLIENT_MAP: Record<
   ControlMode,
   new (

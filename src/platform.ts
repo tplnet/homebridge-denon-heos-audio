@@ -1,10 +1,11 @@
 import type { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from "homebridge";
-import ssdp, { SSDP } from "@achingbrain/ssdp";
+import ssdp, { SSDP, Service as SsdpService } from "@achingbrain/ssdp";
 
 import { DenonAudioAccessory as DenonAudioAccessory } from "./platformAccessory.js";
 import * as CustomLogging from "./customLogging.js";
 import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
 import * as DenonProtocol from "./denonProtocol.js";
+import type { DeviceConfig } from "./config.js";
 
 export class DenonAudioPlatform implements DynamicPlatformPlugin {
   public readonly rawLog: Logger;
@@ -17,7 +18,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
   // this is used to track restored cached accessories
   public readonly accessories: Map<string, PlatformAccessory> = new Map();
-  public readonly ssdpDiscoveredDevices = new Map<string, any>();
+  private readonly ssdpSeenSerialNumbers = new Set<string>();
 
   constructor(log: Logger, config: PlatformConfig, api: API) {
     this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel], PLUGIN_NAME, true) : log;
@@ -63,7 +64,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
     // loop over the configured devices and register each one if it has not already been registered
     if (this.config.devices) {
-      for (const deviceConfig of this.config.devices) {
+      for (const deviceConfig of this.config.devices as DeviceConfig[]) {
         // generate a unique id for the accessory this should be generated from something globally unique, but constant, for example, the device serial number
         // or MAC address
         const uuid = this.api.hap.uuid.generate(deviceConfig.serialNumber);
@@ -77,7 +78,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
           this.log.info("Restoring existing accessory from cache:", existingAccessory.displayName);
 
           // create the accessory handler for the restored accessory
-          new DenonAudioAccessory(this, existingAccessory, deviceConfig, this.rawLog);
+          this.createAccessoryHandler(existingAccessory, deviceConfig);
 
           // after it has been restored, the existing accessory should be removed form the uuid list
           existingAccessoriesUuids = existingAccessoriesUuids.filter((uuid) => uuid !== existingAccessory.UUID);
@@ -93,10 +94,10 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
           accessory.context.device = deviceConfig;
 
           // create the accessory handler for the newly create accessory
-          new DenonAudioAccessory(this, accessory, deviceConfig, this.rawLog);
-
-          // publish as external accessory since HomeKit only allows one television accessory per bridge
-          this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
+          if (this.createAccessoryHandler(accessory, deviceConfig)) {
+            // publish as external accessory since HomeKit only allows one television accessory per bridge
+            this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
+          }
         }
       }
     }
@@ -111,76 +112,69 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  async discoverSsdpDevices() {
-    let bus: SSDP | undefined = undefined;
-    let discoverIterator = undefined;
-    let errorOccurred = false;
-
+  /**
+   * Creates the accessory handler. Configuration errors are logged instead of being thrown,
+   * so that a single misconfigured device does not prevent the other devices (or Homebridge) from starting.
+   * @returns true if the accessory was set up successfully
+   */
+  private createAccessoryHandler(accessory: PlatformAccessory, deviceConfig: DeviceConfig): boolean {
     try {
-      bus = await ssdp();
-
-      bus.on("error", (error) => {
-        if (!errorOccurred) {
-          this.log.warn("Error in the device discovery service. Shutting it down. New devices will no longer be discovered.");
-          this.log.debug("Error that caused the warning above:", error);
-          errorOccurred = true;
-          bus?.stop().catch(() => {});
-        }
-      });
-
-      discoverIterator = bus?.discover();
+      new DenonAudioAccessory(this, accessory, deviceConfig, this.rawLog);
+      return true;
     } catch (error) {
-      this.log.warn("Error in the device discovery service. Shutting it down. New devices will no longer be discovered.");
-      this.log.debug("Error that caused the warning above:", error);
-      errorOccurred = true;
-      bus?.stop().catch(() => {});
-    }
-
-    // Loop until an error occurs or the iterator is done
-    while (!errorOccurred) {
-      let service;
-      try {
-        const { value: serviceFound, done } = await discoverIterator!.next();
-        if (done) break; // End of discovery
-        if (errorOccurred) break;
-        service = serviceFound;
-      } catch (error) {
-        // Catch errors from the async iterator
-        if (!errorOccurred) {
-          this.log.warn("Error in the device discovery service. Shutting it down. New devices will no longer be discovered.");
-          this.log.debug("Error that caused the warning above:", error);
-          errorOccurred = true;
-          bus?.stop().catch(() => {});
-        }
-      }
-      await this.checkSsdpDevice(service);
+      this.log.error(`Could not set up device '${deviceConfig.name}':`, error instanceof Error ? error.message : error);
+      return false;
     }
   }
 
-  async checkSsdpDevice(service: any) {
-    const serial = service?.details?.device?.serialNumber;
+  async discoverSsdpDevices() {
+    let bus: SSDP | undefined;
+    let stopped = false;
+    const stop = (error: unknown) => {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      this.log.warn("Error in the device discovery service. Shutting it down. New devices will no longer be discovered.");
+      this.log.debug("Error that caused the warning above:", error);
+      bus?.stop().catch(() => {});
+    };
 
-    if (!serial) {
+    try {
+      bus = await ssdp();
+      bus.on("error", stop);
+
+      for await (const service of bus.discover()) {
+        if (stopped) {
+          break;
+        }
+        await this.checkSsdpDevice(service);
+      }
+    } catch (error) {
+      stop(error);
+    }
+  }
+
+  async checkSsdpDevice(service: SsdpService) {
+    const device = service.details?.device;
+    const serial: string | undefined = device?.serialNumber;
+    if (!serial || this.ssdpSeenSerialNumbers.has(serial)) {
+      return;
+    }
+    this.ssdpSeenSerialNumbers.add(serial);
+
+    const identification = [device.manufacturer, device.manufacturerURL, device.modelName, device.friendlyName].join(" ").toLowerCase();
+    if (!identification.includes("denon")) {
       return;
     }
 
-    if (this.ssdpDiscoveredDevices.has(serial)) {
-      return;
-    }
-
-    this.ssdpDiscoveredDevices.set(serial, service);
-
-    if (!JSON.stringify(service).toLowerCase().includes("denon")) {
-      return;
-    }
-
-    if (!service.location.href) {
+    if (!service.location?.href) {
       return;
     }
 
     try {
-      const response = await fetch(service.location.href);
-      response.body?.cancel();
+      const response = await fetch(service.location.href, { signal: AbortSignal.timeout(5000) });
+      response.body?.cancel().catch(() => {});
       if (!response.ok) {
         this.log.debug(`Received a non-200 status code while connecting to a new device's location href (status code: ${response.status}).`);
         return;
@@ -198,8 +192,8 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
     this.log.success("-------------------------------------------------------");
     this.log.success("Found DENON device in local network:");
-    this.log.success("Friendly name:", service.details?.device?.friendlyName);
-    this.log.success("Model name:   ", service.details?.device?.modelName);
+    this.log.success("Friendly name:", device.friendlyName);
+    this.log.success("Model name:   ", device.modelName);
     this.log.success("Serial number:", serial);
     this.log.success("IP address:   ", service.location.hostname);
     this.log.success("Supported modes:", supportedModes.map((mode) => DenonProtocol.ControlMode[mode]).join(", "));

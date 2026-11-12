@@ -12,6 +12,28 @@ interface IDenonClientConnectionParams {
   readonly all_responses_to_generic: boolean;
 }
 
+export interface CommandSpec {
+  readonly COMMAND: string;
+  readonly PARAMS?: string;
+  readonly EXP_RES?: RegExp;
+}
+
+export interface ValueMapping<T> {
+  readonly VALUE: string;
+  readonly MAP: T;
+}
+
+export type ValueMap<T> = Readonly<Record<string, ValueMapping<T>>>;
+
+export interface ProtocolCommand<T = unknown> {
+  readonly GET?: CommandSpec;
+  readonly SET?: CommandSpec;
+  readonly EVENT?: CommandSpec;
+  readonly VALUES?: ValueMap<T>;
+}
+
+export type DebugLogCallback = (message: string, ...parameters: any[]) => void;
+
 export interface IDenonClient {
   readonly serialNumber: string;
   readonly name: string;
@@ -175,40 +197,33 @@ export abstract class DenonClient implements IDenonClient {
   protected abstract subscribeToChangeEvents(): Promise<void>;
 
   protected async sendCommand(
-    command: any,
+    command: ProtocolCommand,
     commandMode: CommandMode,
     { pid, value, passPayload = false }: { value?: string; pid?: number; passPayload?: boolean },
   ): Promise<string> {
-    const specCommand = command[CommandMode[commandMode]];
-    let commandStr = specCommand.COMMAND;
-    if (specCommand.PARAMS) {
-      commandStr += specCommand.PARAMS;
+    const specCommand = commandMode === CommandMode.GET ? command.GET : command.SET;
+    if (!specCommand) {
+      throw new Error(`Command does not support mode ${CommandMode[commandMode]}.`);
     }
-    if (pid) {
-      commandStr = commandStr.replace("[PID]", pid);
+
+    let commandStr = specCommand.COMMAND + (specCommand.PARAMS ?? "");
+    if (pid !== undefined) {
+      commandStr = commandStr.replace("[PID]", pid.toString());
     }
-    if (value) {
+    if (value !== undefined) {
       commandStr = commandStr.replace("[VALUE]", value);
     }
 
-    if (specCommand.EXP_RES) {
-      const response = await this.send(commandStr, specCommand.COMMAND, specCommand.EXP_RES, passPayload);
-
-      if (command.VALUES) {
-        const mappedValue = findMapByValue(command.VALUES, response);
-
-        if (mappedValue === undefined) {
-          throw new InvalidResponseException(
-            `Unexpected response for command ${commandStr}`,
-            Object.values(command.VALUES).map((value: any) => value.VALUE),
-            response,
-          );
-        }
-      }
-      return response;
-    } else {
+    if (!specCommand.EXP_RES) {
       return await this.send(commandStr, specCommand.COMMAND, undefined, passPayload);
     }
+
+    const response = await this.send(commandStr, specCommand.COMMAND, specCommand.EXP_RES, passPayload);
+    if (command.VALUES) {
+      // validates the response against the known values
+      mapResponse(command.VALUES, response, `response for command ${commandStr}`);
+    }
+    return response;
   }
 
   protected async send(command: string, rawCommand?: string, expectedResponse?: RegExp, passPayload: boolean = false): Promise<string> {
@@ -376,24 +391,28 @@ export const isPlaying: Record<Playing, boolean> = {
   [Playing.UNSUPPORTED]: false,
 };
 
-export function findMapByValue(values: any, mapValue: any) {
-  for (const key in values) {
-    if (values[key].VALUE === mapValue) {
-      return values[key].MAP;
-    }
-  }
-
-  return undefined;
+export function findMapByValue<T>(values: ValueMap<T>, value: string): T | undefined {
+  return Object.values(values).find((entry) => entry.VALUE === value)?.MAP;
 }
 
-export function findValueByMap(values: any, mapValue: any) {
-  for (const key in values) {
-    if (values[key].MAP === mapValue) {
-      return values[key].VALUE;
-    }
-  }
+export function findValueByMap<T>(values: ValueMap<T>, mapValue: T): string | undefined {
+  return Object.values(values).find((entry) => entry.MAP === mapValue)?.VALUE;
+}
 
-  return undefined;
+/**
+ * Maps a raw protocol value to its internal representation.
+ * @throws InvalidResponseException if the value is unknown.
+ */
+export function mapResponse<T>(values: ValueMap<T>, value: string, description: string): T {
+  const mapped = findMapByValue(values, value);
+  if (mapped === undefined) {
+    throw new InvalidResponseException(
+      `Unexpected ${description}`,
+      Object.values(values).map((entry) => entry.VALUE),
+      value,
+    );
+  }
+  return mapped;
 }
 
 export class ConnectionTimeoutException extends Error {

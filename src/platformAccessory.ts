@@ -7,6 +7,7 @@ import { PromiseTimeoutException } from "./promiseTimeoutException.js";
 import { IDenonClient, Playing, RaceStatus, ResponseTimeoutException } from "./denonClient.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import * as CustomLogging from "./customLogging.js";
+import type { DeviceConfig } from "./config.js";
 import { fromDeviceVolume, toDeviceVolume } from "./volumeLimit.js";
 
 /**
@@ -48,7 +49,7 @@ export class DenonAudioAccessory {
   private volumeChangeOngoing = false;
   private playingChangeOngoing = false;
 
-  constructor(platform: DenonAudioPlatform, accessory: PlatformAccessory, config: any, log: Logger) {
+  constructor(platform: DenonAudioPlatform, accessory: PlatformAccessory, config: DeviceConfig, log: Logger) {
     log.debug("Initializing DenonAudioAccessory...");
 
     this.platform = platform;
@@ -59,7 +60,10 @@ export class DenonAudioAccessory {
     this.name = accessory.displayName;
     this.ip = config.ip;
     this.serialNumber = config.serialNumber;
-    this.controlMode = DenonProtocol.ControlMode[config.controlProtocol as keyof typeof DenonProtocol.ControlMode] as DenonProtocol.ControlMode;
+    if (!(config.controlProtocol in DenonProtocol.CONTROL_MODE_BY_NAME)) {
+      throw new Error(`Unknown control protocol '${config.controlProtocol}'. Expected one of: ${Object.keys(DenonProtocol.CONTROL_MODE_BY_NAME).join(", ")}`);
+    }
+    this.controlMode = DenonProtocol.CONTROL_MODE_BY_NAME[config.controlProtocol];
 
     if (config.volumeLimitEnabled) {
       const volumeLimit = config.volumeLimit ?? DenonAudioAccessory.DEFAULT_VOLUME_LIMIT;
@@ -140,7 +144,7 @@ export class DenonAudioAccessory {
           continue;
         }
 
-        const configured_input = new ConfiguredInput(config_input.inputID, config_input.name, config_input.showInList, i, true);
+        const configured_input = new ConfiguredInput(config_input.inputID, config_input.name, config_input.showInList ?? true, i, true);
         this.configuredInputsByInputId.set(configured_input.inputID, configured_input);
         this.configuredInputsByIdentifier.set(i, configured_input);
 
@@ -321,7 +325,7 @@ export class DenonAudioAccessory {
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
    */
-  setIdentify(value: any) {
+  setIdentify(value: CharacteristicValue) {
     this.log.info("Triggered SET Identify:", value);
   }
 
