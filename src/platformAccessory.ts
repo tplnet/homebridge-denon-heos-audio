@@ -7,6 +7,7 @@ import { PromiseTimeoutException } from "./promiseTimeoutException.js";
 import { IDenonClient, Playing, RaceStatus, ResponseTimeoutException } from "./denonClient.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import * as CustomLogging from "./customLogging.js";
+import { fromDeviceVolume, toDeviceVolume } from "./volumeLimit.js";
 
 /**
  * Platform Accessory
@@ -17,6 +18,8 @@ export class DenonAudioAccessory {
   private static readonly CALLBACK_TIMEOUT = 1500;
   private static readonly API_CONNECT_TIMEOUT = 5 * 1000;
   private static readonly API_RESPONSE_TIMEOUT = 1 * 1000;
+  private static readonly DEFAULT_VOLUME_STEP_SIZE = 2;
+  private static readonly DEFAULT_VOLUME_LIMIT = 99;
 
   private readonly platform: DenonAudioPlatform;
   private readonly accessory: PlatformAccessory;
@@ -40,7 +43,7 @@ export class DenonAudioAccessory {
   private unknownInput: ConfiguredInput;
 
   private lastSetVolume: number | undefined;
-  private targetMediaState: CharacteristicValue | undefined;
+  private targetMediaState: Playing | undefined;
 
   private volumeChangeOngoing = false;
   private playingChangeOngoing = false;
@@ -58,15 +61,19 @@ export class DenonAudioAccessory {
     this.serialNumber = config.serialNumber;
     this.controlMode = DenonProtocol.ControlMode[config.controlProtocol as keyof typeof DenonProtocol.ControlMode] as DenonProtocol.ControlMode;
 
-    if (config.volumeLimitEnabled && (config.volumeLimit < 0 || config.volumeLimit > 99)) {
-      throw new Error("Volume limit must be between 0 and 99");
+    if (config.volumeLimitEnabled) {
+      const volumeLimit = config.volumeLimit ?? DenonAudioAccessory.DEFAULT_VOLUME_LIMIT;
+      if (!Number.isInteger(volumeLimit) || volumeLimit < 0 || volumeLimit > 99) {
+        throw new Error("Volume limit must be between 0 and 99");
+      }
+      this.volumeLimit = volumeLimit;
     }
-    this.volumeLimit = config.volumeLimitEnabled ? config.volumeLimit : undefined;
 
-    if (config.volumeStepSize < 1 || config.volumeStepSize > 10) {
+    const volumeStepSize = config.volumeStepSize ?? DenonAudioAccessory.DEFAULT_VOLUME_STEP_SIZE;
+    if (!Number.isInteger(volumeStepSize) || volumeStepSize < 1 || volumeStepSize > 10) {
       throw new Error("Volume step size must be between 1 and 10");
     }
-    this.volumeStepSize = config.volumeStepSize;
+    this.volumeStepSize = volumeStepSize;
 
     // set accessory category
     accessory.category = this.platform.api.hap.Categories.TELEVISION;
@@ -222,85 +229,20 @@ export class DenonAudioAccessory {
    * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
    */
   async getActive(): Promise<CharacteristicValue> {
-    const raceStatus = new RaceStatus();
-    this.log.debug(`getPower for ${this.name}. [race id: ${raceStatus.raceId}]`);
-
-    try {
-      return await Promise.race([
-        this.denonClient.getPower(raceStatus),
-        new Promise<boolean>((resolve, reject) => {
-          setTimeout(() => {
-            raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(DenonAudioAccessory.CALLBACK_TIMEOUT));
-          }, DenonAudioAccessory.CALLBACK_TIMEOUT);
-        }),
-      ]);
-    } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
-        this.log.debug(`${this.name} lost its promise race for getActive(). [race id: ${raceStatus.raceId}]`);
-      } else if (error instanceof ResponseTimeoutException) {
-        this.log.debug(`${this.name} response timed out for getActive(). [race id: ${raceStatus.raceId}]`, error);
-      } else {
-        this.log.error(`An error occured while getting power status for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
-      }
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
+    return this.queryDevice("getActive", "power status", (raceStatus) => this.denonClient.getPower(raceStatus));
   }
 
   async getActiveIdentifier(): Promise<CharacteristicValue> {
-    const raceStatus = new RaceStatus();
-    this.log.debug(`getActiveIdentifier for ${this.name}. [race id: ${raceStatus.raceId}]`);
-
-    try {
-      const current_input = await Promise.race([
-        this.denonClient.getInput(raceStatus),
-        new Promise<string>((resolve, reject) => {
-          setTimeout(() => {
-            raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(DenonAudioAccessory.CALLBACK_TIMEOUT));
-          }, DenonAudioAccessory.CALLBACK_TIMEOUT);
-        }),
-      ]);
-      return this.configuredInputsByInputId.get(current_input)?.identifier || this.unknownInput.identifier;
-    } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
-        this.log.debug(`${this.name} lost its promise race for getActiveIdentifier(). [race id: ${raceStatus.raceId}]`);
-      } else if (error instanceof ResponseTimeoutException) {
-        this.log.debug(`${this.name} response timed out for getActiveIdentifier(). [race id: ${raceStatus.raceId}]`, error);
-      } else {
-        this.log.error(`An error occured while getting current input for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
-      }
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
+    const currentInput = await this.queryDevice("getActiveIdentifier", "current input", (raceStatus) => this.denonClient.getInput(raceStatus));
+    return this.configuredInputsByInputId.get(currentInput)?.identifier ?? this.unknownInput.identifier;
   }
 
-  private async getPlaying(raceStatus: RaceStatus): Promise<Playing> {
-    try {
-      return await Promise.race([
-        this.denonClient.getPlaying(raceStatus),
-        new Promise<Playing>((resolve, reject) => {
-          setTimeout(() => {
-            raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(DenonAudioAccessory.CALLBACK_TIMEOUT));
-          }, DenonAudioAccessory.CALLBACK_TIMEOUT);
-        }),
-      ]);
-    } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
-        this.log.debug(`${this.name} lost its promise race for getPlaying(). [race id: ${raceStatus.raceId}]`);
-      } else if (error instanceof ResponseTimeoutException) {
-        this.log.debug(`${this.name} response timed out for getPlaying(). [race id: ${raceStatus.raceId}]`, error);
-      } else {
-        this.log.error(`An error occured while getting playing status for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
-      }
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
+  private getPlaying(): Promise<Playing> {
+    return this.queryDevice("getPlaying", "playing status", (raceStatus) => this.denonClient.getPlaying(raceStatus));
   }
 
   async getCurrentMediaState(): Promise<CharacteristicValue> {
-    const raceStatus = new RaceStatus();
-    this.log.debug(`getCurrentMediaState for ${this.name}. [race id: ${raceStatus.raceId}]`);
-    const playing = await this.getPlaying(raceStatus);
+    const playing = await this.getPlaying();
     switch (playing) {
       case Playing.PLAY:
         return this.platform.Characteristic.CurrentMediaState.PLAY;
@@ -313,75 +255,65 @@ export class DenonAudioAccessory {
   }
 
   async getTargetMediaState(): Promise<CharacteristicValue> {
-    if (this.targetMediaState) {
+    if (this.targetMediaState !== undefined) {
       this.log.debug(`getTargetMediaState for ${this.name}. [retrieving from cache]`);
-      return this.targetMediaState;
-    } else {
-      const raceStatus = new RaceStatus();
-      this.log.debug(`getTargetMediaState for ${this.name}. [race id: ${raceStatus.raceId}]`);
-      const playing = await this.getPlaying(raceStatus);
-      switch (playing) {
-        case Playing.PLAY:
-          return this.platform.Characteristic.TargetMediaState.PLAY;
-        case Playing.PAUSE:
-          return this.platform.Characteristic.TargetMediaState.PAUSE;
-        case Playing.STOP:
-        case Playing.UNSUPPORTED:
-          return this.platform.Characteristic.TargetMediaState.STOP;
-      }
+      return this.playingToTargetMediaState(this.targetMediaState);
+    }
+    return this.playingToTargetMediaState(await this.getPlaying());
+  }
+
+  private playingToTargetMediaState(playing: Playing): CharacteristicValue {
+    switch (playing) {
+      case Playing.PLAY:
+        return this.platform.Characteristic.TargetMediaState.PLAY;
+      case Playing.PAUSE:
+        return this.platform.Characteristic.TargetMediaState.PAUSE;
+      case Playing.STOP:
+      case Playing.UNSUPPORTED:
+        return this.platform.Characteristic.TargetMediaState.STOP;
     }
   }
 
   async getMute(): Promise<CharacteristicValue> {
-    const raceStatus = new RaceStatus();
-    this.log.debug(`getMute for ${this.name}. [race id: ${raceStatus.raceId}]`);
-
-    try {
-      return await Promise.race([
-        this.denonClient.getMute(raceStatus),
-        new Promise<boolean>((resolve, reject) => {
-          setTimeout(() => {
-            raceStatus.setRaceOver();
-            reject(new PromiseTimeoutException(DenonAudioAccessory.CALLBACK_TIMEOUT));
-          }, DenonAudioAccessory.CALLBACK_TIMEOUT);
-        }),
-      ]);
-    } catch (error) {
-      if (error instanceof PromiseTimeoutException) {
-        this.log.debug(`${this.name} lost its promise race for getMute(). [race id: ${raceStatus.raceId}]`);
-      } else if (error instanceof ResponseTimeoutException) {
-        this.log.debug(`${this.name} response timed out for getMute(). [race id: ${raceStatus.raceId}]`, error);
-      } else {
-        this.log.error(`An error occured while getting mute status for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
-      }
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
+    return this.queryDevice("getMute", "mute status", (raceStatus) => this.denonClient.getMute(raceStatus));
   }
 
   async getVolume(): Promise<CharacteristicValue> {
-    const raceStatus = new RaceStatus();
-    this.log.debug(`getVolume for ${this.name}. [race id: ${raceStatus.raceId}]`);
+    const volume = await this.queryDevice("getVolume", "volume", (raceStatus) => this.denonClient.getVolume(raceStatus));
+    return this.adjustBackFromVolumeLimit(volume);
+  }
 
+  /**
+   * Runs a query against the device and races it against the HomeKit callback timeout.
+   * If the device answers too late, the client pushes the value to HomeKit via the update callbacks instead.
+   * Any failure is logged and reported to HomeKit as SERVICE_COMMUNICATION_FAILURE.
+   */
+  private async queryDevice<T>(operation: string, description: string, request: (raceStatus: RaceStatus) => Promise<T>): Promise<T> {
+    const raceStatus = new RaceStatus();
+    this.log.debug(`${operation} for ${this.name}. [race id: ${raceStatus.raceId}]`);
+
+    let timer: NodeJS.Timeout | undefined;
     try {
-      const volume = await Promise.race([
-        this.denonClient.getVolume(raceStatus),
-        new Promise<number>((resolve, reject) => {
-          setTimeout(() => {
+      return await Promise.race([
+        request(raceStatus),
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(() => {
             raceStatus.setRaceOver();
             reject(new PromiseTimeoutException(DenonAudioAccessory.CALLBACK_TIMEOUT));
           }, DenonAudioAccessory.CALLBACK_TIMEOUT);
         }),
       ]);
-      return this.adjustBackFromVolumeLimit(volume);
     } catch (error) {
       if (error instanceof PromiseTimeoutException) {
-        this.log.debug(`${this.name} lost its promise race for getVolume(). [race id: ${raceStatus.raceId}]`);
+        this.log.debug(`${this.name} lost its promise race for ${operation}(). [race id: ${raceStatus.raceId}]`);
       } else if (error instanceof ResponseTimeoutException) {
-        this.log.debug(`${this.name} response timed out for getVolume(). [race id: ${raceStatus.raceId}]`, error);
+        this.log.debug(`${this.name} response timed out for ${operation}(). [race id: ${raceStatus.raceId}]`, error);
       } else {
-        this.log.error(`An error occured while getting volume for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
+        this.log.error(`An error occured while getting ${description} for ${this.name}. [race id: ${raceStatus.raceId}]`, error);
       }
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -477,30 +409,34 @@ export class DenonAudioAccessory {
 
   async setTargetMediaState(newValue: CharacteristicValue) {
     this.log.debug(`setTargetMediaState for ${this.name} set to ${newValue}`);
+
+    let target: Playing;
+    switch (newValue) {
+      case this.platform.Characteristic.TargetMediaState.PLAY:
+        target = Playing.PLAY;
+        break;
+      case this.platform.Characteristic.TargetMediaState.PAUSE:
+        target = Playing.PAUSE;
+        break;
+      case this.platform.Characteristic.TargetMediaState.STOP:
+        target = Playing.STOP;
+        break;
+      default:
+        this.log.warn(`Unexpected target media state for ${this.name}: ${newValue}`);
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
+    }
+
     if (this.playingChangeOngoing) {
-      this.log.debug(`setPlayPauseToggle for ${this.name} was called while another play state change is still ongoing. Ignoring this call.`);
+      this.log.debug(`setTargetMediaState for ${this.name} was called while another play state change is still ongoing. Ignoring this call.`);
       return;
     }
 
-    this.playingChangeOngoing = true;
-    switch (newValue) {
-      case this.platform.Characteristic.TargetMediaState.PLAY:
-        this.targetMediaState = Playing.PLAY;
-        break;
-      case this.platform.Characteristic.TargetMediaState.PAUSE:
-        this.targetMediaState = Playing.PAUSE;
-        break;
-      case this.platform.Characteristic.TargetMediaState.STOP:
-        this.targetMediaState = Playing.STOP;
-        break;
-      default:
-        throw new Error(`Unexpected target media state: ${newValue}`);
-    }
-
     try {
-      await this.denonClient.setPlaying(this.targetMediaState);
+      this.playingChangeOngoing = true;
+      this.targetMediaState = target;
+      await this.denonClient.setPlaying(target);
     } catch (error) {
-      this.log.error(`An error occured while setting mute status for ${this.name}.`, error);
+      this.log.error(`An error occured while setting the play state for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     } finally {
       this.targetMediaState = undefined;
@@ -509,8 +445,7 @@ export class DenonAudioAccessory {
   }
 
   async setPlayPauseToggle() {
-    const raceStatus = new RaceStatus();
-    this.log.debug(`setPlayPauseToggle for ${this.name} [race id: ${raceStatus.raceId}]`);
+    this.log.debug(`setPlayPauseToggle for ${this.name}`);
     if (this.playingChangeOngoing) {
       this.log.debug(`setPlayPauseToggle for ${this.name} was called while another play state change is still ongoing. Ignoring this call.`);
       return;
@@ -518,7 +453,7 @@ export class DenonAudioAccessory {
 
     try {
       this.playingChangeOngoing = true;
-      const currentPlaying = await this.getPlaying(raceStatus);
+      const currentPlaying = await this.getPlaying();
       switch (currentPlaying) {
         case Playing.PLAY:
           this.targetMediaState = Playing.PAUSE;
@@ -579,10 +514,8 @@ export class DenonAudioAccessory {
 
     try {
       this.volumeChangeOngoing = true;
-      this.log.debug(`setVolume for ${this.name} set to ${newValue}`);
       this.lastSetVolume = newValue as number;
-      const volumetoSet = this.adjustToVolumeLimit(newValue as number);
-      this.denonClient.setVolume(volumetoSet);
+      await this.denonClient.setVolume(toDeviceVolume(newValue as number, this.volumeLimit));
     } catch (error) {
       this.log.error(`An error occured while setting volume for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -601,15 +534,12 @@ export class DenonAudioAccessory {
       this.volumeChangeOngoing = true;
       this.log.debug(`setVolumeSelector for ${this.name} set to ${direction}`);
       if (direction === this.platform.Characteristic.VolumeSelector.INCREMENT) {
-        if (this.volumeLimit) {
-          const current_volume_device = await this.denonClient.getVolume();
-          if (this.volumeLimit - current_volume_device <= 0) {
-            // do nothing - volume limit reached
-          } else if (this.volumeLimit - current_volume_device < this.volumeStepSize) {
-            await this.denonClient.setVolumeUp(this.volumeLimit - current_volume_device);
-          } else {
-            await this.denonClient.setVolumeUp(this.volumeStepSize);
+        if (this.volumeLimit !== undefined) {
+          const headroom = this.volumeLimit - (await this.denonClient.getVolume());
+          if (headroom > 0) {
+            await this.denonClient.setVolumeUp(Math.min(headroom, this.volumeStepSize));
           }
+          // otherwise: volume limit reached, do nothing
         } else {
           await this.denonClient.setVolumeUp(this.volumeStepSize);
         }
@@ -617,7 +547,7 @@ export class DenonAudioAccessory {
         await this.denonClient.setVolumeDown(this.volumeStepSize);
       }
     } catch (error) {
-      this.log.error(`An error occured while decrementing volume for ${this.name}.`, error);
+      this.log.error(`An error occured while changing the volume for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     } finally {
       this.volumeChangeOngoing = false;
@@ -647,28 +577,8 @@ export class DenonAudioAccessory {
   /*
    * Volume Limit Helpers
    */
-  private adjustToVolumeLimit(volume: number) {
-    if (this.volumeLimit) {
-      return Math.round((volume * this.volumeLimit) / 100);
-    } else {
-      return volume;
-    }
-  }
-
   private adjustBackFromVolumeLimit(volume: number) {
-    if (this.volumeLimit) {
-      if (this.lastSetVolume && this.adjustToVolumeLimit(this.lastSetVolume) === volume) {
-        return this.lastSetVolume;
-      } else {
-        let adjustedVolume = Math.round((volume / this.volumeLimit) * 100);
-        if (adjustedVolume > 100) {
-          adjustedVolume = 100;
-        }
-        return adjustedVolume;
-      }
-    } else {
-      return volume;
-    }
+    return fromDeviceVolume(volume, this.volumeLimit, this.lastSetVolume);
   }
 }
 

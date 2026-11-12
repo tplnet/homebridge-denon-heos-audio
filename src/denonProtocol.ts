@@ -32,39 +32,25 @@ export const CLIENT_MAP: Record<
 };
 
 function checkProtocolSupportAtPort(host: string, port: number, debugLogCallback?: (message: string, ...parameters: any[]) => void): Promise<boolean> {
+  const CONNECT_TIMEOUT = 5000;
+
   return new Promise((resolve) => {
-    const socket = net.createConnection({ host: host, port: port, timeout: 5000 }, () => {
-      resolve(true);
-      if (debugLogCallback) {
-        debugLogCallback("successfully connected to", host, port);
+    let settled = false;
+    const finish = (supported: boolean, ...logParameters: any[]) => {
+      if (settled) {
+        return;
       }
-      socket.end();
-    });
+      settled = true;
+      clearTimeout(timer);
+      debugLogCallback?.(logParameters[0], ...logParameters.slice(1));
+      socket.destroy();
+      resolve(supported);
+    };
 
-    socket.on("error", (error) => {
-      resolve(false);
-      if (debugLogCallback) {
-        debugLogCallback("error for", host, port, error.message);
-      }
-      socket.end();
-    });
-
-    socket.on("timeout", () => {
-      resolve(false);
-      if (debugLogCallback) {
-        debugLogCallback("timeout for", host, port);
-      }
-      socket.end();
-    });
-
-    setTimeout(() => {
-      if (!socket.destroyed) {
-        if (debugLogCallback) {
-          debugLogCallback("destroying the socket", host, port);
-        }
-        socket.destroy();
-      }
-    }, 10000);
+    const socket = net.createConnection({ host: host, port: port }, () => finish(true, "successfully connected to", host, port));
+    socket.on("error", (error) => finish(false, "error for", host, port, error.message));
+    // Hard upper bound for the connection attempt (covers devices that silently drop the SYN).
+    const timer = setTimeout(() => finish(false, "timeout for", host, port), CONNECT_TIMEOUT);
   });
 }
 
