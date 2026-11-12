@@ -7,10 +7,10 @@ import {
   mapResponse,
   Playing,
 } from "./denonClient.js";
-import * as DenonProtocol from "./denonProtocol.js";
+import { ControlMode } from "./controlMode.js";
 
 export class DenonClientAvrControl extends DenonClient {
-  public readonly controlMode = DenonProtocol.ControlMode.AVRCONTROL;
+  public readonly controlMode = ControlMode.AVRCONTROL;
 
   protected static readonly PROTOCOL = {
     POWER: {
@@ -143,7 +143,7 @@ export class DenonClientAvrControl extends DenonClient {
       name,
       {
         host: host,
-        port: DenonProtocol.ControlMode.AVRCONTROL,
+        port: ControlMode.AVRCONTROL,
         connect_timeout: connect_timeout,
         response_timeout: response_timeout,
         command_prefix: undefined,

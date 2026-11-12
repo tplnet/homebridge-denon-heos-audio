@@ -1,10 +1,10 @@
 import { IDenonClient, Playing, RaceStatus } from "./denonClient.js";
 import { DenonClientAvrControl } from "./denonClientAvrControl.js";
 import { DenonClientHeosCli } from "./denonClientHeosCli.js";
-import * as DenonProtocol from "./denonProtocol.js";
+import { ControlMode } from "./controlMode.js";
 
 export class DenonClientHybrid implements IDenonClient {
-  public readonly controlMode = DenonProtocol.ControlMode.HYBRID;
+  public readonly controlMode = ControlMode.HYBRID;
   public readonly serialNumber: string;
   public readonly name: string;
   public readonly defaultInputs = DenonClientHeosCli.DEFAULT_INPUT_SOURCES;

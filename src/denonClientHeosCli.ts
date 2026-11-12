@@ -12,7 +12,7 @@ import {
   ProtocolCommand,
   RaceStatus,
 } from "./denonClient.js";
-import * as DenonProtocol from "./denonProtocol.js";
+import { ControlMode } from "./controlMode.js";
 
 interface HeosResponse {
   heos: {
@@ -25,7 +25,7 @@ interface HeosResponse {
 }
 
 export class DenonClientHeosCli extends DenonClient {
-  public readonly controlMode = DenonProtocol.ControlMode.HEOSCLI;
+  public readonly controlMode = ControlMode.HEOSCLI;
 
   protected static readonly PROTOCOL = {
     GLOBAL_CHANGE_EVENT_REGEX: /^event\/(\w+)$/,
@@ -267,7 +267,7 @@ export class DenonClientHeosCli extends DenonClient {
       name,
       {
         host: host,
-        port: DenonProtocol.ControlMode.HEOSCLI,
+        port: ControlMode.HEOSCLI,
         connect_timeout: connect_timeout,
         response_timeout: response_timeout,
         command_prefix: "heos://",
@@ -575,7 +575,7 @@ export class DenonClientHeosCli extends DenonClient {
     return inputID;
   }
 
-  private static inputPayloadToInputID(payload_str: string) {
+  public static inputPayloadToInputID(payload_str: string): string {
     const payload = JSON.parse(payload_str);
     if (!payload.sid) {
       throw new InvalidResponseException("Payload does not include sid!", undefined, payload_str);

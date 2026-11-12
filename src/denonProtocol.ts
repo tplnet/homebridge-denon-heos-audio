@@ -4,18 +4,9 @@ import { IDenonClient } from "./denonClient.js";
 import { DenonClientAvrControl } from "./denonClientAvrControl.js";
 import { DenonClientHeosCli } from "./denonClientHeosCli.js";
 import { DenonClientHybrid } from "./denonClientHybrid.js";
+import { ControlMode } from "./controlMode.js";
 
-export enum ControlMode {
-  AVRCONTROL = 23,
-  HEOSCLI = 1255,
-  HYBRID = -1,
-}
-
-export const CONTROL_MODE_BY_NAME: Record<keyof typeof ControlMode, ControlMode> = {
-  AVRCONTROL: ControlMode.AVRCONTROL,
-  HEOSCLI: ControlMode.HEOSCLI,
-  HYBRID: ControlMode.HYBRID,
-};
+export { CONTROL_MODE_BY_NAME, ControlMode } from "./controlMode.js";
 
 export const CLIENT_MAP: Record<
   ControlMode,
