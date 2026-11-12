@@ -53,7 +53,10 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
   discoverDevices() {
     if (this.config.deviceDiscovery) {
-      this.discoverSsdpDevices();
+      this.discoverSsdpDevices().catch((error) => {
+        this.log.warn("Device discovery stopped unexpectedly. New devices will no longer be discovered.");
+        this.log.debug("Error that caused the warning above:", error);
+      });
     }
 
     let existingAccessoriesUuids = Array.from(this.accessories.keys());

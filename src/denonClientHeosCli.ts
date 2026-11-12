@@ -274,10 +274,11 @@ export class DenonClientHeosCli extends DenonClient {
 
     this.player_id = undefined;
     this.findPlayerId().catch((error) => {
+      // The player id is looked up again lazily before the next command, so a failure here is not fatal.
       if (error instanceof ConnectionTimeoutException) {
-        this.debugLog("Error connecting client '", this.name, "' at ", this.params.host, ":", this.params.port, " - ", error);
+        this.debugLog(`Error connecting client '${this.name}' at ${this.params.host}:${this.params.port} -`, error.message);
       } else {
-        throw error;
+        this.debugLog(`Error looking up the player id for '${this.name}' -`, error instanceof Error ? error.message : error);
       }
     });
   }
@@ -343,9 +344,9 @@ export class DenonClientHeosCli extends DenonClient {
 
     if (this.responseCallback && this.responseCallback.command === r_obj.heos.command.trim()) {
       if (r_obj.heos.success !== undefined && r_obj.heos.success !== "success") {
-        const error = new CommandFailedException(this.responseCallback.command);
-        this.responseCallback = undefined;
-        throw error;
+        this.debugLog("Received failure response:", response);
+        this.rejectPendingResponse(new CommandFailedException(this.responseCallback.command));
+        return;
       }
 
       if (r_obj.heos.message !== undefined) {
@@ -361,7 +362,8 @@ export class DenonClientHeosCli extends DenonClient {
         if (out !== undefined) {
           if (this.responseCallback.passPayload) {
             if (r_obj.payload === undefined) {
-              throw new InvalidResponseException("Received a response does not include a payload!");
+              this.rejectPendingResponse(new InvalidResponseException("Received a response that does not include a payload!", undefined, response));
+              return;
             }
             out = JSON.stringify(r_obj.payload);
           }
@@ -469,10 +471,14 @@ export class DenonClientHeosCli extends DenonClient {
       // 'now playing changed' only gives us an indication that something has changed, but no information on what has changed.
       // Therefore, we need to actively query the current input.
       if (this.inputUpdateCallback) {
-        this.sendCommand(DenonClientHeosCli.PROTOCOL.INPUT, CommandMode.GET, { passPayload: true }).then((payload_str) => {
-          const inputID = DenonClientHeosCli.inputPayloadToInputID(payload_str);
-          this.inputUpdateCallback!(inputID);
-        });
+        this.sendCommand(DenonClientHeosCli.PROTOCOL.INPUT, CommandMode.GET, { passPayload: true })
+          .then((payload_str) => {
+            const inputID = DenonClientHeosCli.inputPayloadToInputID(payload_str);
+            this.inputUpdateCallback?.(inputID);
+          })
+          .catch((error) => {
+            this.debugLog("Error while querying the current input after a change event:", error instanceof Error ? error.message : error);
+          });
       }
     }
   }

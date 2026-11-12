@@ -41,7 +41,6 @@ export abstract class DenonClient implements IDenonClient {
   public readonly defaultInputs: DefaultInput[];
   private socket: net.Socket | undefined;
   private sendMutex;
-  private dataEventMutex;
   private pendingData: string;
   protected responseCallback: ResponseCallback | undefined;
 
@@ -69,7 +68,6 @@ export abstract class DenonClient implements IDenonClient {
 
     this.socket = undefined;
     this.sendMutex = new Mutex();
-    this.dataEventMutex = new Mutex();
     this.pendingData = "";
     this.responseCallback = undefined;
 
@@ -150,7 +148,10 @@ export abstract class DenonClient implements IDenonClient {
       });
       newSocket.on("close", () => {
         this.debugLog("Connection has closed.");
-        this.socket = undefined;
+        if (this.socket === newSocket) {
+          this.socket = undefined;
+          this.rejectPendingResponse(new Error("Connection closed while waiting for a response."));
+        }
       });
       newSocket.on("error", (error) => {
         this.debugLog("Socket error after connect:", error.message);
@@ -225,43 +226,52 @@ export abstract class DenonClient implements IDenonClient {
   protected async sendUnchecked(command: string, rawCommand?: string, expectedResponse?: RegExp, passPayload: boolean = false): Promise<string> {
     const fullCommand = this.params.command_prefix ? this.params.command_prefix + command : command;
     this.debugLog("Sending command:", fullCommand);
-    if (expectedResponse) {
-      return new Promise<string>((resolve, reject) => {
-        this.responseCallback = new ResponseCallback(
-          (response) => {
-            resolve(response);
-          },
-          rawCommand ?? command,
-          expectedResponse,
-          passPayload,
-        );
-        this.socket!.write(fullCommand + this.params.command_separator);
-        setTimeout(() => {
-          reject(new ResponseTimeoutException(fullCommand, this.params.response_timeout));
-        }, this.params.response_timeout);
-      }).finally(() => {
-        this.responseCallback = undefined;
-      });
-    } else {
-      return new Promise<string>((resolve) => {
-        this.socket!.write(fullCommand + this.params.command_separator);
-        resolve("");
-      });
+    const socket = this.socket;
+    if (!socket) {
+      throw new Error(`Cannot send command '${fullCommand}': not connected.`);
     }
+
+    if (!expectedResponse) {
+      socket.write(fullCommand + this.params.command_separator);
+      return "";
+    }
+
+    let timer: NodeJS.Timeout | undefined;
+    return new Promise<string>((resolve, reject) => {
+      this.responseCallback = new ResponseCallback(resolve, reject, rawCommand ?? command, expectedResponse, passPayload);
+      timer = setTimeout(() => {
+        reject(new ResponseTimeoutException(fullCommand, this.params.response_timeout));
+      }, this.params.response_timeout);
+      socket.write(fullCommand + this.params.command_separator);
+    }).finally(() => {
+      clearTimeout(timer);
+      this.responseCallback = undefined;
+    });
   }
 
-  private async dataHandler(incomingData: any) {
-    const release = await this.dataEventMutex.acquire();
-    let chunks;
-    try {
-      const currentData: string = this.pendingData ? this.pendingData + incomingData.toString() : incomingData.toString();
-      chunks = currentData.split(this.params.response_separator);
-      this.pendingData = chunks[chunks.length - 1];
-    } finally {
-      release();
-    }
-    for (let i = 0; i <= chunks.length - 2; i++) {
-      this.responseRouter(chunks[i]);
+  /**
+   * Rejects the currently pending command (if any) with the given error.
+   */
+  protected rejectPendingResponse(error: Error) {
+    const pending = this.responseCallback;
+    this.responseCallback = undefined;
+    pending?.reject(error);
+  }
+
+  private dataHandler(incomingData: Buffer | string) {
+    // Socket 'data' events are delivered sequentially on the event loop, so no locking is required here.
+    const currentData = this.pendingData + incomingData.toString();
+    const chunks = currentData.split(this.params.response_separator);
+    this.pendingData = chunks.pop() ?? "";
+
+    for (const chunk of chunks) {
+      try {
+        this.responseRouter(chunk);
+      } catch (error) {
+        // Never let a malformed or unexpected message escape from the socket event handler,
+        // as this would surface as an uncaught exception and take down the whole Homebridge process.
+        this.debugLog("Error while processing incoming data:", error instanceof Error ? error.message : error);
+      }
     }
   }
 
@@ -313,12 +323,14 @@ export enum CommandMode {
 
 class ResponseCallback {
   public readonly callback: (response: string) => void;
+  public readonly reject: (error: Error) => void;
   public readonly command: string;
   public readonly expectedResponse: RegExp;
   public readonly passPayload: boolean;
 
-  constructor(callback: (response: string) => void, command: string, expectedResponse: RegExp, passPayload = false) {
+  constructor(callback: (response: string) => void, reject: (error: Error) => void, command: string, expectedResponse: RegExp, passPayload = false) {
     this.callback = callback;
+    this.reject = reject;
     this.command = command;
     this.expectedResponse = expectedResponse;
     this.passPayload = passPayload;

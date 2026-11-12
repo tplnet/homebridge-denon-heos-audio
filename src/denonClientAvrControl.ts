@@ -161,10 +161,11 @@ export class DenonClientAvrControl extends DenonClient {
     );
 
     this.connect().catch((error) => {
+      // A new connection attempt is made lazily before the next command, so a failure here is not fatal.
       if (error instanceof ConnectionTimeoutException) {
-        this.debugLog("Error connecting client '", this.name, "' at ", this.params.host, ":", this.params.port, " - ", error);
+        this.debugLog(`Error connecting client '${this.name}' at ${this.params.host}:${this.params.port} -`, error.message);
       } else {
-        throw error;
+        this.debugLog(`Error connecting client '${this.name}' -`, error instanceof Error ? error.message : error);
       }
     });
   }

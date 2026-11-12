@@ -79,7 +79,7 @@ export class DenonAudioAccessory {
     this.informationService.setCharacteristic(this.platform.Characteristic.Manufacturer, "unknown");
     this.informationService.setCharacteristic(this.platform.Characteristic.Model, "unknown");
     this.informationService.setCharacteristic(this.platform.Characteristic.FirmwareRevision, "unknown");
-    this.fetchMetadataAios();
+    void this.fetchMetadataAios();
 
     // add tv service
     this.tvService = this.accessory.getService(`${this.name} TV`) || this.accessory.addService(this.platform.Service.Television, `${this.name} TV`);
@@ -182,39 +182,39 @@ export class DenonAudioAccessory {
     this.log.info("Finished initializing accessory.");
   }
 
-  private fetchMetadataAios() {
-    fetch(`http://${this.ip}:60006/upnp/desc/aios_device/aios_device.xml`)
-      .then((response) => {
-        if (!response.ok) {
-          this.log.debug(`Received a non-200 status code while connecting to a new device's location href (status code: ${response.status}).`);
-        }
-
-        response.text().then((text) => {
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(text, "text/xml");
-
-          this.informationService.setCharacteristic(
-            this.platform.Characteristic.Manufacturer,
-            xmlDoc.getElementsByTagName("device")[0]?.getElementsByTagName("manufacturer")[0]?.textContent || "unknown",
-          );
-          this.informationService.setCharacteristic(
-            this.platform.Characteristic.Model,
-            xmlDoc.getElementsByTagName("device")[0]?.getElementsByTagName("modelName")[0]?.textContent || "unknown",
-          );
-
-          const d_list = xmlDoc.getElementsByTagName("device")[0]?.getElementsByTagName("deviceList")[0]?.getElementsByTagName("device") || [];
-          for (const d of d_list) {
-            const firmware_version = d.getElementsByTagName("firmware_version")[0]?.textContent;
-            if (firmware_version) {
-              this.informationService.setCharacteristic(this.platform.Characteristic.FirmwareRevision, firmware_version || "unknown");
-              break;
-            }
-          }
-        });
-      })
-      .catch(() => {
-        this.log.warn(`An error occured while connecting to ${this.name}'s location href.`);
+  private async fetchMetadataAios() {
+    try {
+      const response = await fetch(`http://${this.ip}:60006/upnp/desc/aios_device/aios_device.xml`, {
+        signal: AbortSignal.timeout(DenonAudioAccessory.API_CONNECT_TIMEOUT),
       });
+      if (!response.ok) {
+        response.body?.cancel().catch(() => {});
+        this.log.debug(`Received a non-200 status code while fetching the device description (status code: ${response.status}).`);
+        return;
+      }
+
+      const text = await response.text();
+      const xmlDoc = new DOMParser().parseFromString(text, "text/xml");
+      const rootDevice = xmlDoc.getElementsByTagName("device")[0];
+
+      this.informationService.setCharacteristic(
+        this.platform.Characteristic.Manufacturer,
+        rootDevice?.getElementsByTagName("manufacturer")[0]?.textContent || "unknown",
+      );
+      this.informationService.setCharacteristic(this.platform.Characteristic.Model, rootDevice?.getElementsByTagName("modelName")[0]?.textContent || "unknown");
+
+      const subDevices = rootDevice?.getElementsByTagName("deviceList")[0]?.getElementsByTagName("device") ?? [];
+      for (const d of subDevices) {
+        const firmwareVersion = d.getElementsByTagName("firmware_version")[0]?.textContent;
+        if (firmwareVersion) {
+          this.informationService.setCharacteristic(this.platform.Characteristic.FirmwareRevision, firmwareVersion);
+          break;
+        }
+      }
+    } catch (error) {
+      this.log.warn(`An error occured while fetching the device description of ${this.name}.`);
+      this.log.debug("Error that caused the warning above:", error);
+    }
   }
 
   /**
@@ -393,15 +393,17 @@ export class DenonAudioAccessory {
     this.log.info("Triggered SET Identify:", value);
   }
 
-  setActive(newValue: CharacteristicValue) {
+  async setActive(newValue: CharacteristicValue) {
     this.log.debug(`setActive for ${this.name} set to ${newValue}`);
-    this.denonClient.setPower(newValue === this.platform.Characteristic.Active.ACTIVE).catch((error) => {
+    try {
+      await this.denonClient.setPower(newValue === this.platform.Characteristic.Active.ACTIVE);
+    } catch (error) {
       this.log.error(`An error occured while setting power status for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    });
+    }
   }
 
-  setActiveIdentifier(newValue: CharacteristicValue) {
+  async setActiveIdentifier(newValue: CharacteristicValue) {
     this.log.debug(`setActiveIdentifier for ${this.name} set to ${newValue}`);
 
     if (!this.configuredInputsByIdentifier.has(newValue as number)) {
@@ -409,13 +411,15 @@ export class DenonAudioAccessory {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.NOT_ALLOWED_IN_CURRENT_STATE);
     }
 
-    this.denonClient.setInput(this.configuredInputsByIdentifier.get(newValue as number)!.inputID).catch((error) => {
+    try {
+      await this.denonClient.setInput(this.configuredInputsByIdentifier.get(newValue as number)!.inputID);
+    } catch (error) {
       this.log.error(`An error occured while setting input for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    });
+    }
   }
 
-  setRemoteKey(remoteKey: CharacteristicValue) {
+  async setRemoteKey(remoteKey: CharacteristicValue) {
     switch (remoteKey) {
       case this.platform.Characteristic.RemoteKey.REWIND: {
         // unsupported in iOS
@@ -427,12 +431,12 @@ export class DenonAudioAccessory {
       }
       case this.platform.Characteristic.RemoteKey.NEXT_TRACK: {
         // unsupported in iOS
-        this.setPlayNext();
+        await this.setPlayNext();
         break;
       }
       case this.platform.Characteristic.RemoteKey.PREVIOUS_TRACK: {
         // unsupported in iOS
-        this.setPlayPrevious();
+        await this.setPlayPrevious();
         break;
       }
       case this.platform.Characteristic.RemoteKey.ARROW_UP: {
@@ -442,15 +446,15 @@ export class DenonAudioAccessory {
         break;
       }
       case this.platform.Characteristic.RemoteKey.ARROW_LEFT: {
-        this.setPlayPrevious();
+        await this.setPlayPrevious();
         break;
       }
       case this.platform.Characteristic.RemoteKey.ARROW_RIGHT: {
-        this.setPlayNext();
+        await this.setPlayNext();
         break;
       }
       case this.platform.Characteristic.RemoteKey.SELECT: {
-        this.setPlayPauseToggle();
+        await this.setPlayPauseToggle();
         break;
       }
       case this.platform.Characteristic.RemoteKey.BACK: {
@@ -462,7 +466,7 @@ export class DenonAudioAccessory {
         break;
       }
       case this.platform.Characteristic.RemoteKey.PLAY_PAUSE: {
-        this.setPlayPauseToggle();
+        await this.setPlayPauseToggle();
         break;
       }
       case this.platform.Characteristic.RemoteKey.INFORMATION: {
@@ -536,28 +540,34 @@ export class DenonAudioAccessory {
     }
   }
 
-  setPlayNext() {
+  async setPlayNext() {
     this.log.debug(`setPlayNext for ${this.name}`);
-    this.denonClient.setPlayNext().catch((error) => {
+    try {
+      await this.denonClient.setPlayNext();
+    } catch (error) {
       this.log.error(`An error occured while setting play next for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    });
+    }
   }
 
-  setPlayPrevious() {
+  async setPlayPrevious() {
     this.log.debug(`setPlayPrevious for ${this.name}`);
-    this.denonClient.setPlayPrevious().catch((error) => {
+    try {
+      await this.denonClient.setPlayPrevious();
+    } catch (error) {
       this.log.error(`An error occured while setting play previous for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    });
+    }
   }
 
-  setMute(newValue: CharacteristicValue) {
+  async setMute(newValue: CharacteristicValue) {
     this.log.debug(`setMute for ${this.name} set to ${newValue}`);
-    this.denonClient.setMute(newValue as boolean).catch((error) => {
+    try {
+      await this.denonClient.setMute(newValue as boolean);
+    } catch (error) {
       this.log.error(`An error occured while setting mute status for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    });
+    }
   }
 
   async setVolume(newValue: CharacteristicValue) {
