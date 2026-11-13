@@ -4,10 +4,11 @@ import type { DenonAudioPlatform } from "./platform.js";
 
 import { DOMParser } from "@xmldom/xmldom";
 import { PromiseTimeoutException } from "./promiseTimeoutException.js";
-import { IDenonClient, Playing, RaceStatus, ResponseTimeoutException } from "./denonClient.js";
+import { DefaultInput, IDenonClient, Playing, RaceStatus, ResponseTimeoutException } from "./denonClient.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import * as CustomLogging from "./customLogging.js";
-import type { DeviceConfig } from "./config.js";
+import type { DeviceConfig, InputConfig } from "./config.js";
+import { sanitizeAccessoryName } from "./discovery.js";
 import { fromDeviceVolume, toDeviceVolume } from "./volumeLimit.js";
 
 /**
@@ -20,6 +21,8 @@ export class DenonAudioAccessory {
   private static readonly API_CONNECT_TIMEOUT = 5 * 1000;
   private static readonly API_RESPONSE_TIMEOUT = 1 * 1000;
   private static readonly DEFAULT_VOLUME_STEP_SIZE = 2;
+  // includes the time to connect to the device and to look up the player id
+  private static readonly INPUT_QUERY_TIMEOUT = 15 * 1000;
   private static readonly DEFAULT_VOLUME_LIMIT = 99;
 
   private readonly platform: DenonAudioPlatform;
@@ -39,6 +42,7 @@ export class DenonAudioAccessory {
   private readonly volumeStepSize: number;
   private readonly volumeLimit: number | undefined;
 
+  private readonly configuredInputs: InputConfig[];
   private configuredInputsByIdentifier: Map<number, ConfiguredInput> = new Map();
   private configuredInputsByInputId: Map<string, ConfiguredInput> = new Map();
   private unknownInput: ConfiguredInput;
@@ -132,65 +136,86 @@ export class DenonAudioAccessory {
       this.callbackInput.bind(this),
     );
 
-    // specify inputs to add
-    let i = 1;
+    this.configuredInputs = config.inputs ?? [];
+    this.unknownInput = new ConfiguredInput("unknown", "Unknown Input", false, 0, false);
 
-    if (config.inputs) {
-      // user-specified inputs
+    this.log.info("Finished initializing accessory.");
+  }
 
-      for (const config_input of config.inputs) {
-        if (this.configuredInputsByInputId.has(config_input.inputID)) {
-          log.warn(`Duplicate input ID found in configuration: ${config_input.inputID}. Skipping this input.`);
-          continue;
-        }
-
-        const configured_input = new ConfiguredInput(config_input.inputID, config_input.name, config_input.showInList ?? true, i, true);
-        this.configuredInputsByInputId.set(configured_input.inputID, configured_input);
-        this.configuredInputsByIdentifier.set(i, configured_input);
-
-        i++;
-      }
+  /**
+   * Creates the input services. Must be called (and awaited) before the accessory is published.
+   *
+   * Order: inputs from the configuration, inputs reported by the device (shown in the input list unless inputs are
+   * configured), sources that are only displayed as current input (hidden), and "Unknown Input".
+   * If the device can't list its inputs, all known inputs of the protocol are added (hidden) instead.
+   */
+  async setupInputs() {
+    let deviceInputs: DefaultInput[] | undefined;
+    try {
+      deviceInputs = await this.withTimeout(this.denonClient.getInputSources(), DenonAudioAccessory.INPUT_QUERY_TIMEOUT);
+    } catch (error) {
+      this.log.info(`Could not read the inputs from the device (${error instanceof Error ? error.message : error}). Using the default input list.`);
     }
 
-    for (const default_input of this.denonClient.defaultInputs) {
-      if (this.configuredInputsByInputId.has(default_input.inputID)) {
-        // this input id is already configured by the user, skipping
+    const inputs: ConfiguredInput[] = [];
+    const add = (inputID: string, displayName: string, showInList: boolean, userDefined: boolean) => {
+      if (inputs.some((input) => input.inputID === inputID)) {
+        return;
+      }
+      inputs.push(new ConfiguredInput(inputID, sanitizeAccessoryName(displayName, inputID), showInList, inputs.length + 1, userDefined));
+    };
+
+    for (const input of this.configuredInputs) {
+      if (inputs.some((existing) => existing.inputID === input.inputID)) {
+        this.log.warn(`Duplicate input ID found in configuration: ${input.inputID}. Skipping this input.`);
         continue;
       }
-
-      const configured_input = new ConfiguredInput(default_input.inputID, default_input.displayName, false, i, false);
-      this.configuredInputsByInputId.set(configured_input.inputID, configured_input);
-      this.configuredInputsByIdentifier.set(i, configured_input);
-      i++;
+      add(input.inputID, input.name, input.showInList ?? true, true);
     }
 
-    this.unknownInput = new ConfiguredInput("unknown", "Unknown Input", false, i, false);
-    this.configuredInputsByInputId.set(this.unknownInput.inputID, this.unknownInput);
-    this.configuredInputsByIdentifier.set(i, this.unknownInput);
+    if (deviceInputs) {
+      const showDeviceInputs = this.configuredInputs.length === 0;
+      deviceInputs.forEach((input) => add(input.inputID, input.displayName, showDeviceInputs, false));
+      this.denonClient.displayOnlyInputs.forEach((input) => add(input.inputID, input.displayName, false, false));
+      this.log.info(`Inputs reported by the device: ${deviceInputs.map((input) => `${input.displayName} (${input.inputID})`).join(", ") || "none"}`);
+    } else {
+      this.denonClient.defaultInputs.forEach((input) => add(input.inputID, input.displayName, false, false));
+    }
 
-    for (const configured_input of this.configuredInputsByIdentifier.values()) {
+    this.unknownInput = new ConfiguredInput("unknown", "Unknown Input", false, inputs.length + 1, false);
+    inputs.push(this.unknownInput);
+
+    for (const input of inputs) {
+      this.configuredInputsByInputId.set(input.inputID, input);
+      this.configuredInputsByIdentifier.set(input.identifier, input);
+
       const inputService =
-        this.accessory.getService(`${this.name} Input ${configured_input.inputID}`) ||
-        this.accessory.addService(this.platform.Service.InputSource, `${this.name} Input ${configured_input.inputID}`, configured_input.inputID);
-      inputService.setCharacteristic(this.platform.Characteristic.Identifier, configured_input.identifier);
-      inputService.setCharacteristic(this.platform.Characteristic.ConfiguredName, configured_input.displayName);
+        this.accessory.getService(`${this.name} Input ${input.inputID}`) ||
+        this.accessory.addService(this.platform.Service.InputSource, `${this.name} Input ${input.inputID}`, input.inputID);
+      inputService.setCharacteristic(this.platform.Characteristic.Identifier, input.identifier);
+      inputService.setCharacteristic(this.platform.Characteristic.ConfiguredName, input.displayName);
       inputService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.OTHER);
       inputService.setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED);
       inputService.setCharacteristic(
         this.platform.Characteristic.CurrentVisibilityState,
-        configured_input.showInList ? this.platform.Characteristic.CurrentVisibilityState.SHOWN : this.platform.Characteristic.CurrentVisibilityState.HIDDEN,
+        input.showInList ? this.platform.Characteristic.CurrentVisibilityState.SHOWN : this.platform.Characteristic.CurrentVisibilityState.HIDDEN,
       );
       this.tvService.addLinkedService(inputService);
       this.inputServices.push(inputService);
-
-      log.debug(
-        `Added ${configured_input.userDefined ? "user-defined" : "default"} input service for input ID ${configured_input.inputID} with identifier ${
-          configured_input.identifier
-        }.`,
-      );
     }
 
-    this.log.info("Finished initializing accessory.");
+    const shown = inputs.filter((input) => input.showInList).map((input) => input.displayName);
+    this.log.info(`Added ${inputs.length} input services (shown in the input list: ${shown.join(", ") || "none"}).`);
+  }
+
+  private withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
+    let timer: NodeJS.Timeout | undefined;
+    return Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new PromiseTimeoutException(timeout)), timeout);
+      }),
+    ]).finally(() => clearTimeout(timer));
   }
 
   private async fetchMetadataAios() {

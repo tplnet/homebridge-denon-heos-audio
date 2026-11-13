@@ -71,11 +71,11 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 | Remote: play / pause | ☐ | ☐ | ☐ | ☐ |
 | Remote: next / previous track | ☐ | ☐ | ☐ | ☐ |
 
-Suggested inputs to configure:
+Inputs are read from the device (log: `Inputs reported by the device: …`). Expected:
 
-- Denon Home Amp (Hybrid / AVR Control): check the IDs in the debug log (`SI…`) after switching inputs once
-- Denon Home 150 / 250: `aux_in_1`
-- Marantz Cinema 60 (Hybrid / AVR Control): `TV`, `BD`, `GAME`, `MPLAY`
+- Denon Home Amp: TV, Optical In, Line In
+- Denon Home 150 / 250: AUX In
+- Marantz Cinema 60: the sources enabled on the receiver (Switch, Switch 2, Apple TV, AUX2)
 
 ## 5. Robustness
 

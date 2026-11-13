@@ -108,6 +108,26 @@ describe("DenonClientHeosCli response handling", () => {
     }
   });
 
+  it("reads the inputs of the player (waits for the result after 'command under process')", async () => {
+    attachFakeSocket();
+    client.player_name = "Office Speaker";
+    const pending = client.getInputSources();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(written, [`heos://browse/browse?sid=${PID}\r\n`]);
+    receive(heos({ heos: { command: "browse/browse", result: "success", message: `command under process&sid=${PID}` } }));
+    receive(
+      heos({
+        heos: { command: "browse/browse", result: "success", message: `sid=${PID}&returned=1&count=1` },
+        payload: [{ container: "no", mid: "inputs/aux_in_1", type: "station", playable: "yes", name: "Office Speaker - AUX In" }],
+      }),
+    );
+    const inputs = await pending;
+    assert.deepEqual(
+      inputs.map((input) => [input.inputID, input.displayName]),
+      [["aux_in_1", "AUX In"]],
+    );
+  });
+
   it("ignores responses for other players", async () => {
     attachFakeSocket();
     const pending = client.sendUnchecked(`player/get_mute?pid=${PID}`, "player/get_mute", /state=(\w+)/);

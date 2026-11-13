@@ -98,7 +98,9 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
           this.log.info("Restoring existing accessory from cache:", existingAccessory.displayName);
 
           // create the accessory handler for the restored accessory
-          this.createAccessoryHandler(existingAccessory, deviceConfig);
+          this.createAccessoryHandler(existingAccessory, deviceConfig)
+            ?.setupInputs()
+            .catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error));
 
           // after it has been restored, the existing accessory should be removed form the uuid list
           existingAccessoriesUuids = existingAccessoriesUuids.filter((uuid) => uuid !== existingAccessory.UUID);
@@ -144,9 +146,15 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private publishNewAccessory(deviceConfig: DeviceConfig, accessory: PlatformAccessory) {
     // store a copy of the device object in the `accessory.context`
     accessory.context.device = deviceConfig;
-    if (this.createAccessoryHandler(accessory, deviceConfig)) {
-      this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
+    const handler = this.createAccessoryHandler(accessory, deviceConfig);
+    if (!handler) {
+      return;
     }
+    // the inputs are read from the device first, as the services of a published accessory should not change anymore
+    handler
+      .setupInputs()
+      .catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error))
+      .finally(() => this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]));
   }
 
   /**
@@ -175,15 +183,14 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   /**
    * Creates the accessory handler. Configuration errors are logged instead of being thrown,
    * so that a single misconfigured device does not prevent the other devices (or Homebridge) from starting.
-   * @returns true if the accessory was set up successfully
+   * @returns the accessory handler, or undefined if the configuration is invalid
    */
-  private createAccessoryHandler(accessory: PlatformAccessory, deviceConfig: DeviceConfig): boolean {
+  private createAccessoryHandler(accessory: PlatformAccessory, deviceConfig: DeviceConfig): DenonAudioAccessory | undefined {
     try {
-      new DenonAudioAccessory(this, accessory, deviceConfig, this.rawLog);
-      return true;
+      return new DenonAudioAccessory(this, accessory, deviceConfig, this.rawLog);
     } catch (error) {
       this.log.error(`Could not set up device '${deviceConfig.name}':`, error instanceof Error ? error.message : error);
-      return false;
+      return undefined;
     }
   }
 

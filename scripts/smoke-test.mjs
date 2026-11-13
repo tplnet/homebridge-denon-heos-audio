@@ -20,7 +20,8 @@ const RUN_SECONDS = 15;
 
 // ---- simulated devices -------------------------------------------------------------------------
 const players = [
-  { pid: 11, serial: "SMOKE-HEOS", name: "Smoke HEOS" },
+  // negative player ids exist on real devices
+  { pid: -11, serial: "SMOKE-HEOS", name: "Smoke HEOS" },
   { pid: 22, serial: "SMOKE-HYBRID", name: "Smoke Hybrid" },
 ];
 const reply = (socket, obj) => socket.write(JSON.stringify(obj) + "\r\n");
@@ -36,7 +37,8 @@ function startHeos() {
         buffer = lines.pop();
         for (const line of lines) {
           const [command, query = ""] = line.replace("heos://", "").split("?");
-          const pid = query.match(/pid=(\d+)/)?.[1];
+          const pid = query.match(/pid=(-?\d+)/)?.[1];
+          const sid = query.match(/sid=(-?\d+)/)?.[1];
           const ok = (message, payload) => reply(socket, { heos: { command, result: "success", message }, ...(payload ? { payload } : {}) });
           if (command === "system/register_for_change_events") ok("enable=on");
           else if (command === "player/get_players") ok("", players);
@@ -44,6 +46,14 @@ function startHeos() {
           else if (command === "player/get_mute") ok(`pid=${pid}&state=off`);
           else if (command === "player/get_play_state") ok(`pid=${pid}&state=play`);
           else if (command === "player/get_now_playing_media") ok(`pid=${pid}`, { sid: 1027, mid: "inputs/aux_in_1" });
+          else if (command === "browse/browse") {
+            // like the real devices: first "command under process", then the result
+            ok(`command under process&sid=${sid}`);
+            const player = players.find((p) => String(p.pid) === sid);
+            setTimeout(() => {
+              ok(`sid=${sid}&returned=1&count=1`, [{ container: "no", mid: "inputs/aux_in_1", type: "station", playable: "yes", name: `${player?.name} - AUX In` }]);
+            }, 300);
+          }
         }
       });
     });
@@ -140,6 +150,7 @@ const checks = [
   [`${expectedAccessories} accessories published`, (output.match(/Publishing external accessory/g) ?? []).length === expectedAccessories],
   ["invalid device skipped with a clear message", output.includes("Could not set up device 'Smoke Invalid'")],
   ["connected to the HEOS device", output.includes("[Smoke HEOS] New connection established.")],
+  ["inputs read from the device (negative player id)", output.includes("[Smoke HEOS] Inputs reported by the device: AUX In (aux_in_1)")],
   ["no HAP-NodeJS warnings", !output.includes("HAP-NodeJS WARNING")],
   ["no deprecation warnings", !/deprecat/i.test(output)],
   ["no uncaught errors", !/Uncaught|unhandledRejection|TypeError|ReferenceError/.test(output)],

@@ -89,7 +89,8 @@ There are two ways to set up your devices. You can combine them.
 | Effort | Switch on one option | One entry per device |
 | Name in the Home app | Name from the HEOS app | Your choice |
 | Control protocol | Chosen automatically (Hybrid if supported) | Your choice |
-| Inputs, volume limit, step size | Defaults (no input list) | Fully configurable |
+| Inputs | Read from the device | Read from the device, or your own list |
+| Volume limit, step size | Defaults | Fully configurable |
 | Device switched on later | Added with the next search (every 2 min) | Always present (shows *No Response* while off) |
 
 **Rule of thumb:** use automatic setup for simple speakers and add AV receivers or amplifiers whose inputs you want to switch manually.
@@ -121,7 +122,8 @@ Enable **Add Discovered Devices Automatically** in the plugin settings (or set `
 
 - the **name** from the HEOS app (e.g. *Patio Music*),
 - the **control protocol** `HYBRID` if the device supports both protocols, otherwise `HEOSCLI`,
-- default settings (volume step 2, no volume limit, no input list).
+- the inputs reported by the device,
+- default settings (volume step 2, no volume limit).
 
 The log confirms every device: `Automatically adding discovered device 'Patio Music' (HYBRID, 192.168.1.149).`
 
@@ -233,18 +235,31 @@ A misconfigured device (unknown protocol, invalid volume limit, …) is reported
 
 ## Inputs
 
-Only the inputs you list under `inputs` are shown in the Home app. The input IDs depend on the protocol:
+**You usually don't have to configure inputs.** With HEOS CLI and Hybrid the plugin asks the device for its inputs at startup and shows exactly those in the Home app, with the names set on the device (e.g. *Apple TV* or *Switch* on a Marantz receiver):
+
+| Device (examples) | Inputs reported by the device |
+| --- | --- |
+| Denon Home 150 / 250 | AUX In |
+| Denon Home Amp | TV, Optical In, Line In |
+| Marantz Cinema 60 | the sources enabled on the receiver |
+
+The log shows what was found: `Inputs reported by the device: TV (tv), Optical In (optical_in_1), Line In (line_in_1)`.
+
+Configure `inputs` only if you want to choose the inputs, their names or their order yourself. As soon as you configure inputs, only those are shown in the input list.
+If the device can't be reached at startup, the plugin falls back to a list of all known inputs (hidden). Pure AVR Control can't list inputs and always uses that list.
+
+The input IDs depend on the protocol:
 
 | Protocol | Example input IDs |
 | --- | --- |
-| HEOS CLI | `hdmi_arc_1`, `optical_in_1`, `aux_in_1`, `line_in_1`, `coax_in_1`, `phono` |
-| AVR Control / Hybrid | `TV`, `BD`, `GAME`, `MPLAY`, `CBL/SAT`, `DVD`, `CD`, `TUNER`, `AUX1`, `NET` |
+| HEOS CLI and Hybrid | `tv`, `hdmi_arc_1`, `optical_in_1`, `aux_in_1`, `line_in_1`, `bluray`, `game`, `aux1`, `cable_sat` |
+| AVR Control | `TV`, `BD`, `GAME`, `MPLAY`, `CBL/SAT`, `DVD`, `CD`, `TUNER`, `AUX1`, `NET` |
 
 The settings form in the Homebridge UI suggests all known IDs as you type.
 
 Streaming sources (Spotify, TuneIn, AirPlay, …) are recognised and shown as the *current* input, but they can't be selected from the Home app. Start them from the HEOS app, AirPlay or Spotify Connect.
 
-**Finding the right ID:** select the input once with the HEOS app or the remote, then look at the Homebridge debug log. With HEOS CLI the ID appears as `"mid":"inputs/<id>"`, with AVR Control as `SI<ID>`.
+**Finding an ID manually:** select the input once with the HEOS app or the remote, then look at the Homebridge debug log. With HEOS CLI and Hybrid the ID appears as `"mid":"inputs/<id>"`, with AVR Control as `SI<ID>`.
 
 ## Using it in the Home app
 

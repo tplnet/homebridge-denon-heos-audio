@@ -1,4 +1,4 @@
-import { IDenonClient, Playing, RaceStatus } from "./denonClient.js";
+import { DefaultInput, IDenonClient, Playing, RaceStatus } from "./denonClient.js";
 import { DenonClientAvrControl } from "./denonClientAvrControl.js";
 import { DenonClientHeosCli } from "./denonClientHeosCli.js";
 import { ControlMode } from "./controlMode.js";
@@ -8,6 +8,7 @@ export class DenonClientHybrid implements IDenonClient {
   public readonly serialNumber: string;
   public readonly name: string;
   public readonly defaultInputs = DenonClientHeosCli.DEFAULT_INPUT_SOURCES;
+  public readonly displayOnlyInputs = DenonClientHeosCli.DISPLAY_ONLY_INPUT_SOURCES;
 
   private readonly clientAvrControl;
   private readonly clientHeosCli;
@@ -109,5 +110,9 @@ export class DenonClientHybrid implements IDenonClient {
 
   public async setInput(inputID: string): Promise<string> {
     return this.clientHeosCli.setInput(inputID);
+  }
+
+  public getInputSources(): Promise<DefaultInput[] | undefined> {
+    return this.clientHeosCli.getInputSources();
   }
 }

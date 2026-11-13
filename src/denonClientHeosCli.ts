@@ -161,6 +161,16 @@ export class DenonClientHeosCli extends DenonClient {
         EXP_RES: /step=(\d+)/,
       },
     },
+    INPUT_SOURCES: {
+      // inputs of this player: the AUX input source (sid=1027) contains one entry per player, with sid = pid
+      GET: {
+        COMMAND: "browse/browse",
+        PARAMS: "?sid=[PID]",
+        EXP_RES: /returned=(\d+)/,
+        // the device first answers "command under process", the result may take a few seconds
+        TIMEOUT: 6000,
+      },
+    },
     INPUT: {
       GET: {
         COMMAND: "player/get_now_playing_media",
@@ -181,7 +191,6 @@ export class DenonClientHeosCli extends DenonClient {
 
   public static readonly HEOS_SOURCES = {
     1: new DefaultInput("pandora", "Pandora"),
-    2: new DefaultInput("rhapsody", "Rhapsody"),
     3: new DefaultInput("tunein", "TuneIn"),
     4: new DefaultInput("spotify", "Spotify"),
     5: new DefaultInput("deezer", "Deezer"),
@@ -190,10 +199,7 @@ export class DenonClientHeosCli extends DenonClient {
     8: new DefaultInput("siriusxm", "SiriusXM"),
     9: new DefaultInput("soundcloud", "SoundCloud"),
     10: new DefaultInput("tidal", "Tidal"),
-    12: new DefaultInput("rdio", "Rdio"),
     13: new DefaultInput("amazonmusic", "Amazon Music"),
-    15: new DefaultInput("moodmix", "Mood Mix"),
-    16: new DefaultInput("juke", "Juke"),
     18: new DefaultInput("qqmusic", "QQ Music"),
     30: new DefaultInput("qobuz", "qobuz"),
     1024: new DefaultInput("local", "Local Network"),
@@ -249,13 +255,20 @@ export class DenonClientHeosCli extends DenonClient {
     new DefaultInput("tv", "TV"),
   ];
 
-  public static readonly DEFAULT_INPUT_SOURCES = [
-    ...Object.values(DenonClientHeosCli.HEOS_SOURCES),
-    ...DenonClientHeosCli.INPUT_SOURCES,
-    new DefaultInput("airplay", "AirPlay"),
-  ];
+  /**
+   * Music sources that can't be selected as input, but are shown as current input while playing.
+   */
+  public static readonly DISPLAY_ONLY_INPUT_SOURCES = [...Object.values(DenonClientHeosCli.HEOS_SOURCES), new DefaultInput("airplay", "AirPlay")];
+
+  /**
+   * Fallback if the inputs can't be read from the device: all known physical inputs.
+   */
+  public static readonly DEFAULT_INPUT_SOURCES = [...DenonClientHeosCli.DISPLAY_ONLY_INPUT_SOURCES, ...DenonClientHeosCli.INPUT_SOURCES];
+
+  public readonly displayOnlyInputs = DenonClientHeosCli.DISPLAY_ONLY_INPUT_SOURCES;
 
   private player_id: number | undefined;
+  private player_name: string | undefined;
 
   constructor(
     serialNumber: string,
@@ -310,6 +323,7 @@ export class DenonClientHeosCli extends DenonClient {
     for (const player of payload) {
       if (player.serial === this.serialNumber) {
         this.player_id = player.pid;
+        this.player_name = player.name;
         return;
       }
     }
@@ -606,6 +620,37 @@ export class DenonClientHeosCli extends DenonClient {
     }
 
     return payload.sid.toString();
+  }
+
+  public async getInputSources(): Promise<DefaultInput[]> {
+    const payload_str = await this.sendCommand(DenonClientHeosCli.PROTOCOL.INPUT_SOURCES, CommandMode.GET, { passPayload: true });
+    return DenonClientHeosCli.inputSourcesFromPayload(payload_str, this.player_name);
+  }
+
+  /**
+   * Converts the browse result of a player's AUX inputs into inputs.
+   * The names are prefixed with the player name by the device ("Office Speaker - AUX In"); the prefix is removed.
+   */
+  public static inputSourcesFromPayload(payload_str: string, playerName?: string): DefaultInput[] {
+    const payload = JSON.parse(payload_str);
+    if (!Array.isArray(payload)) {
+      throw new InvalidResponseException("Input list is not an array!", undefined, payload_str);
+    }
+    const inputs: DefaultInput[] = [];
+    for (const item of payload) {
+      if (typeof item?.mid !== "string" || !item.mid.startsWith("inputs/")) {
+        continue;
+      }
+      const inputID = item.mid.substring("inputs/".length);
+      let name = typeof item.name === "string" && item.name.trim() ? item.name.trim() : inputID;
+      if (playerName && name.startsWith(`${playerName} - `)) {
+        name = name.substring(playerName.length + 3);
+      }
+      if (!inputs.some((input) => input.inputID === inputID)) {
+        inputs.push(new DefaultInput(inputID, name));
+      }
+    }
+    return inputs;
   }
 
   public async setInput(inputID: string): Promise<string> {

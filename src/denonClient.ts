@@ -16,6 +16,8 @@ export interface CommandSpec {
   readonly COMMAND: string;
   readonly PARAMS?: string;
   readonly EXP_RES?: RegExp;
+  /** Response timeout for this command (ms); defaults to the client's response timeout. */
+  readonly TIMEOUT?: number;
 }
 
 export interface ValueMapping<T> {
@@ -54,6 +56,15 @@ export interface IDenonClient {
   setVolumeDown(volumeDecrement: number): Promise<void>;
   getInput(raceStatus?: RaceStatus): Promise<string>;
   setInput(inputID: string): Promise<string>;
+  /**
+   * Reads the physical inputs of the device.
+   * @returns undefined if the protocol can't list the inputs
+   */
+  getInputSources(): Promise<DefaultInput[] | undefined>;
+  /**
+   * Inputs that are only used to show the current source (e.g. streaming services), if the inputs could be read from the device.
+   */
+  readonly displayOnlyInputs: DefaultInput[];
 }
 
 export abstract class DenonClient implements IDenonClient {
@@ -218,7 +229,7 @@ export abstract class DenonClient implements IDenonClient {
       return await this.send(commandStr, specCommand.COMMAND, undefined, passPayload);
     }
 
-    const response = await this.send(commandStr, specCommand.COMMAND, specCommand.EXP_RES, passPayload);
+    const response = await this.send(commandStr, specCommand.COMMAND, specCommand.EXP_RES, passPayload, specCommand.TIMEOUT);
     if (command.VALUES) {
       // validates the response against the known values
       mapResponse(command.VALUES, response, `response for command ${commandStr}`);
@@ -226,19 +237,25 @@ export abstract class DenonClient implements IDenonClient {
     return response;
   }
 
-  protected async send(command: string, rawCommand?: string, expectedResponse?: RegExp, passPayload: boolean = false): Promise<string> {
+  protected async send(command: string, rawCommand?: string, expectedResponse?: RegExp, passPayload: boolean = false, timeout?: number): Promise<string> {
     const release = await this.sendMutex.acquire();
     try {
       if (!this.isConnected()) {
         await this.connectUnchecked();
       }
-      return await this.sendUnchecked(command, rawCommand, expectedResponse, passPayload);
+      return await this.sendUnchecked(command, rawCommand, expectedResponse, passPayload, timeout);
     } finally {
       release();
     }
   }
 
-  protected async sendUnchecked(command: string, rawCommand?: string, expectedResponse?: RegExp, passPayload: boolean = false): Promise<string> {
+  protected async sendUnchecked(
+    command: string,
+    rawCommand?: string,
+    expectedResponse?: RegExp,
+    passPayload: boolean = false,
+    timeout: number = this.params.response_timeout,
+  ): Promise<string> {
     const fullCommand = this.params.command_prefix ? this.params.command_prefix + command : command;
     this.debugLog("Sending command:", fullCommand);
     const socket = this.socket;
@@ -255,8 +272,8 @@ export abstract class DenonClient implements IDenonClient {
     return new Promise<string>((resolve, reject) => {
       this.responseCallback = new ResponseCallback(resolve, reject, rawCommand ?? command, expectedResponse, passPayload);
       timer = setTimeout(() => {
-        reject(new ResponseTimeoutException(fullCommand, this.params.response_timeout));
-      }, this.params.response_timeout);
+        reject(new ResponseTimeoutException(fullCommand, timeout));
+      }, timeout);
       socket.write(fullCommand + this.params.command_separator);
     }).finally(() => {
       clearTimeout(timer);
@@ -329,6 +346,12 @@ export abstract class DenonClient implements IDenonClient {
   public abstract getInput(raceStatus?: RaceStatus): Promise<string>;
 
   public abstract setInput(inputID: string): Promise<string>;
+
+  public readonly displayOnlyInputs: DefaultInput[] = [];
+
+  public async getInputSources(): Promise<DefaultInput[] | undefined> {
+    return undefined;
+  }
 }
 
 export enum CommandMode {
