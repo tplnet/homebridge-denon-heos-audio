@@ -45,7 +45,7 @@ describe("auto-adding discovered devices", () => {
   it("leaves manually configured devices untouched", () => {
     const manual = { name: "Dining Room", serialNumber: "BMC00000000001", ip: "192.168.1.120", controlProtocol: "HEOSCLI" };
     const { platform, published } = createPlatform({ autoAddDiscoveredDevices: true, devices: [manual] });
-    platform.discoverSsdpDevices = async () => {};
+    platform.runDeviceDiscovery = async () => {};
     platform.discoverDevices();
     assert.equal(published.length, 1);
     assert.equal(published[0].deviceConfig, manual);
@@ -70,7 +70,7 @@ describe("auto-adding discovered devices", () => {
   it("skips duplicate manual entries for the same serial number", () => {
     const device = { name: "A", serialNumber: "S1", ip: "1.2.3.4", controlProtocol: "HEOSCLI" };
     const { platform, published } = createPlatform({ devices: [device, { ...device, name: "B" }] });
-    platform.discoverSsdpDevices = async () => {};
+    platform.runDeviceDiscovery = async () => {};
     platform.discoverDevices();
     assert.equal(published.length, 1);
     assert.equal(published[0].deviceConfig.name, "A");

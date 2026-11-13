@@ -10,6 +10,15 @@ import { buildDiscoveredDeviceConfig } from "./discovery.js";
 
 const SUPPORTED_BRANDS = ["denon", "marantz"];
 
+const MINUTE = 60 * 1000;
+
+/**
+ * Errors of the UDP sockets (bind, send, ...) are Node.js system errors with a 'syscall' property.
+ */
+function isSocketError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "syscall" in error;
+}
+
 export class DenonAudioPlatform implements DynamicPlatformPlugin {
   public readonly rawLog: Logger;
   public readonly log: Logger;
@@ -24,6 +33,15 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private readonly ssdpSeenSerialNumbers = new Set<string>();
   // serial numbers of devices set up from the manual configuration or by auto-add
   private readonly activeSerialNumbers = new Set<string>();
+
+  // device discovery
+  private ssdpFactory: () => Promise<SSDP> = () => ssdp();
+  private ssdpBus: SSDP | undefined;
+  private discoveryRestartDelaysMs = [1 * MINUTE, 5 * MINUTE, 15 * MINUTE, 30 * MINUTE];
+  private discoveryRestartTimer: NodeJS.Timeout | undefined;
+  // ends the current discovery session or restart delay immediately (used on shutdown)
+  private interruptDiscovery: (() => void) | undefined;
+  private shuttingDown = false;
 
   constructor(log: Logger, config: PlatformConfig, api: API) {
     this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel], PLUGIN_NAME, true) : log;
@@ -43,6 +61,13 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
       log.debug("Executed didFinishLaunching callback");
       // run the method to discover / register your devices as accessories
       this.discoverDevices();
+    });
+
+    this.api.on("shutdown", () => {
+      this.shuttingDown = true;
+      clearTimeout(this.discoveryRestartTimer);
+      this.ssdpBus?.stop().catch(() => {});
+      this.interruptDiscovery?.();
     });
   }
 
@@ -106,9 +131,8 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     }
 
     if (this.config.deviceDiscovery || this.autoAddEnabled()) {
-      this.discoverSsdpDevices().catch((error) => {
-        this.log.warn("Device discovery stopped unexpectedly. New devices will no longer be discovered.");
-        this.log.debug("Error that caused the warning above:", error);
+      this.runDeviceDiscovery().catch((error) => {
+        this.log.warn("Device discovery stopped unexpectedly. New devices will no longer be discovered.", error);
       });
     }
   }
@@ -172,31 +196,81 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  async discoverSsdpDevices() {
-    let bus: SSDP | undefined;
-    let stopped = false;
-    const stop = (error: unknown) => {
-      if (stopped) {
+  /**
+   * Keeps the SSDP device discovery running for the whole lifetime of the plugin.
+   * If the discovery service fails (e.g. network interface changes), it is restarted with an increasing delay.
+   */
+  async runDeviceDiscovery() {
+    let failures = 0;
+    while (!this.shuttingDown) {
+      const startedAt = Date.now();
+      const error = await this.discoverSsdpDevices();
+      if (this.shuttingDown) {
         return;
       }
-      stopped = true;
-      this.log.warn("Error in the device discovery service. Shutting it down. New devices will no longer be discovered.");
-      this.log.debug("Error that caused the warning above:", error);
-      bus?.stop().catch(() => {});
-    };
+
+      if (Date.now() - startedAt > 30 * MINUTE) {
+        failures = 0; // it ran fine for a while, start over with the shortest delay
+      }
+      const delay = this.discoveryRestartDelaysMs[Math.min(failures, this.discoveryRestartDelaysMs.length - 1)];
+      failures++;
+
+      const reason = error instanceof Error ? error.message : error !== undefined ? String(error) : "discovery ended";
+      this.log.warn(`Device discovery stopped (${reason}). Restarting in ${Math.max(1, Math.round(delay / MINUTE))} min.`);
+      this.log.debug("Error that stopped the device discovery:", error);
+
+      await new Promise<void>((resolve) => {
+        this.interruptDiscovery = resolve;
+        this.discoveryRestartTimer = setTimeout(resolve, delay);
+        this.discoveryRestartTimer.unref?.();
+      });
+      this.interruptDiscovery = undefined;
+    }
+  }
+
+  /**
+   * Runs one discovery session.
+   * @returns a promise that resolves with the error that ended the session (undefined if it simply ended)
+   */
+  async discoverSsdpDevices(): Promise<unknown> {
+    let bus: SSDP;
+    try {
+      bus = await this.ssdpFactory();
+    } catch (error) {
+      return error;
+    }
+    this.ssdpBus = bus;
 
     try {
-      bus = await ssdp();
-      bus.on("error", stop);
-
-      for await (const service of bus.discover()) {
-        if (stopped) {
-          break;
-        }
-        await this.checkSsdpDevice(service);
-      }
-    } catch (error) {
-      stop(error);
+      return await new Promise<unknown>((resolve) => {
+        this.interruptDiscovery = () => resolve(undefined);
+        bus.on("error", (error: unknown) => {
+          // The SSDP library also reports problems of single devices as 'error' (e.g. a device description that
+          // can't be fetched). Only network / socket errors stop the discovery; everything else is ignored.
+          if (isSocketError(error)) {
+            resolve(error);
+          } else {
+            this.log.debug("Ignoring error of a single device in the device discovery:", error instanceof Error ? error.message : error);
+          }
+        });
+        (async () => {
+          for await (const service of bus.discover()) {
+            if (this.shuttingDown) {
+              break;
+            }
+            try {
+              await this.checkSsdpDevice(service);
+            } catch (error) {
+              // a single misbehaving device must not stop the discovery
+              this.log.debug("Error while checking a discovered device:", error);
+            }
+          }
+        })().then(() => resolve(undefined), resolve);
+      });
+    } finally {
+      this.interruptDiscovery = undefined;
+      this.ssdpBus = undefined;
+      bus.stop().catch(() => {});
     }
   }
 

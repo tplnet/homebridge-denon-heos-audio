@@ -90,7 +90,7 @@ There are two ways to set up your devices. You can combine them.
 | Name in the Home app | Name from the HEOS app | Your choice |
 | Control protocol | Chosen automatically (Hybrid if supported) | Your choice |
 | Inputs, volume limit, step size | Defaults (no input list) | Fully configurable |
-| Device must be on when Homebridge starts | Yes | No |
+| Device switched on later | Added when it announces itself | Always present (shows *No Response* while off) |
 
 **Rule of thumb:** use automatic setup for simple speakers and add AV receivers or amplifiers whose inputs you want to switch manually.
 Devices that you configure manually are **never** touched by the automatic setup, even if they are discovered.
@@ -127,7 +127,7 @@ The log confirms every device: `Automatically adding discovered device 'Patio Mu
 
 To leave out a device, add its serial number to **Excluded Devices** (`excludedSerialNumbers`).
 
-> A device that is switched off or disconnected while Homebridge starts is not added until the next restart.
+Discovery keeps running in the background. A device that is switched on later is added as soon as it announces itself in the network. If the discovery fails (for example after a network change), it restarts automatically after 1 to 30 minutes.
 
 ### Step 3b: Manual setup
 

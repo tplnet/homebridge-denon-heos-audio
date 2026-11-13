@@ -84,6 +84,7 @@ Suggested inputs to configure:
 - [ ] Rapidly move the volume slider and press play/pause several times. Homebridge must not crash.
 - [ ] Control the same device from the HEOS app while the Home app is open. States stay in sync.
 - [ ] Leave Homebridge running for 24 h and check the log for errors or warnings.
+- [ ] Device discovery is still running after 24 h (no `Device discovery stopped` without a following restart). With `autoAddDiscoveredDevices`, a speaker switched on hours after the Homebridge start is added.
 
 ## 6. Adding to the Home app
 
