@@ -13,6 +13,24 @@
         "required": false,
         "default": true
       },
+      "autoAddDiscoveredDevices": {
+        "title": "Add Discovered Devices Automatically",
+        "description": "Automatically adds every Denon / Marantz device found in the network as accessory, using its name from the HEOS app and the best control protocol (Hybrid if supported). Devices listed under 'Devices' below keep their manual configuration. Each accessory still has to be added in the Home app once.",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      "excludedSerialNumbers": {
+        "title": "Excluded Devices",
+        "description": "Serial numbers of discovered devices that should not be added automatically.",
+        "type": "array",
+        "required": false,
+        "default": [],
+        "items": {
+          "type": "string",
+          "title": "Serial Number"
+        }
+      },
       "devices": {
         "title": "Devices",
         "description": "Add your Denon devices here.",
@@ -228,7 +246,13 @@
         "title": "Log Level",
         "description": "If console log is enabled, only log messages at this log level or below it will be displayed in the console.",
         "type": "string",
-        "enum": ["error", "warn", "success", "info", "debug"],
+        "enum": [
+          "error",
+          "warn",
+          "success",
+          "info",
+          "debug"
+        ],
         "required": false,
         "default": "debug"
       }
