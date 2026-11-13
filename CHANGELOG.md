@@ -2,6 +2,14 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.4
+
+### Changed
+
+- Shorter npm description without the fork notice, so the search results in the Homebridge UI show the supported devices and features. The fork is mentioned at the top of the README and in the credits.
+
+1.2.3 was not published on npm; its changes are included in 1.2.4.
+
 ## 1.2.3
 
 ### Changed
