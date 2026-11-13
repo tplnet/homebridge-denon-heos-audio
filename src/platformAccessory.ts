@@ -56,6 +56,8 @@ export class DenonAudioAccessory {
   private volumeChangeOngoing = false;
   private pendingActive: { value: boolean; until: number } | undefined;
   private powerChangeInProgress = false;
+  /** The power change running in the background (for tests). */
+  private powerChange: Promise<void> | undefined;
   private playingChangeOngoing = false;
 
   constructor(platform: DenonAudioPlatform, accessory: PlatformAccessory, config: DeviceConfig, log: Logger) {
@@ -377,16 +379,23 @@ export class DenonAudioAccessory {
     // started), and the device reports intermediate states during that time.
     this.pendingActive = { value: active, until: Number.POSITIVE_INFINITY };
     this.powerChangeInProgress = true;
-    try {
-      await this.denonClient.setPower(active);
-      this.pendingActive = { value: active, until: Date.now() + DenonAudioAccessory.POWER_STATE_SETTLE_TIME };
-    } catch (error) {
-      this.pendingActive = undefined;
-      this.log.error(`An error occured while setting power status for ${this.name}.`, error);
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    } finally {
-      this.powerChangeInProgress = false;
-    }
+    // HomeKit gets the answer immediately; switching continues in the background. Otherwise HomeKit / the Homebridge UI
+    // would show the old state until switching on has finished (which can take several seconds).
+    this.powerChange = this.denonClient
+      .setPower(active)
+      .then(() => {
+        this.pendingActive = { value: active, until: Date.now() + DenonAudioAccessory.POWER_STATE_SETTLE_TIME };
+      })
+      .catch(async (error) => {
+        this.pendingActive = undefined;
+        this.log.error(`An error occured while setting power status for ${this.name}.`, error);
+        // show the real state again
+        const deviceState = await this.denonClient.getPower().catch(() => !active);
+        this.tvService.updateCharacteristic(this.platform.Characteristic.Active, deviceState);
+      })
+      .finally(() => {
+        this.powerChangeInProgress = false;
+      });
   }
 
   async setActiveIdentifier(newValue: CharacteristicValue) {

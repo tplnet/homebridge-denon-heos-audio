@@ -279,7 +279,8 @@ export class DenonClientHeosCli extends DenonClient {
   private player_id: number | undefined;
   /** HEOS favorite (1, 2, …) that is started when switching on without something to resume; 0 = disabled. */
   private powerOnFavorite = 1;
-  private static readonly PLAY_VERIFY_CHECKS = 3;
+  // radio streams may need a few seconds of buffering before the device reports "play"
+  private static readonly PLAY_VERIFY_CHECKS = 8;
   private playVerifyIntervalMs = 1000;
   /** Log for actions the user should see without debug logging (e.g. starting the power on favorite). */
   private infoLog: (message: string) => void = (message) => this.debugLog(message);

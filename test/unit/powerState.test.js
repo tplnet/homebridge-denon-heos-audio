@@ -29,12 +29,14 @@ describe("power state after switching", () => {
   it("reports the new state while the device still reports the old one", async () => {
     const { handler } = createAccessory();
     await handler.setActive(hap.Characteristic.Active.INACTIVE);
+    await handler.powerChange;
     assert.equal(await handler.getActive(), false);
   });
 
   it("uses the device state again after the settle time", async () => {
     const { handler } = createAccessory();
     await handler.setActive(hap.Characteristic.Active.INACTIVE);
+    await handler.powerChange;
     handler.pendingActive.until = Date.now() - 1;
     assert.equal(await handler.getActive(), true);
   });
@@ -42,37 +44,40 @@ describe("power state after switching", () => {
   it("a different state reported by the device wins", async () => {
     const { handler } = createAccessory();
     await handler.setActive(hap.Characteristic.Active.INACTIVE);
+    await handler.powerChange;
     handler.callbackActive(true); // e.g. started in the HEOS app
     assert.equal(await handler.getActive(), true);
   });
 
-  it("reports the requested state while switching is still in progress", async () => {
+  it("answers HomeKit immediately and keeps the requested state while switching", async () => {
     const { handler } = createAccessory();
     handler.denonClient.getPower = async () => false; // device: still stopped
     let finish;
     handler.denonClient.setPower = () => new Promise((resolve) => (finish = resolve));
 
-    const switching = handler.setActive(hap.Characteristic.Active.ACTIVE);
+    // resolves although the device hasn't finished switching
+    await handler.setActive(hap.Characteristic.Active.ACTIVE);
     assert.equal(await handler.getActive(), true, "requested state while switching");
 
     // intermediate state reported by the device while the favorite is being started
     handler.callbackActive(false);
     assert.equal(await handler.getActive(), true, "intermediate state is ignored");
-    assert.equal(handler.tvService.getCharacteristic(hap.Characteristic.Active).value, hap.Characteristic.Active.INACTIVE);
 
     finish(true);
-    await switching;
+    await handler.powerChange;
     assert.equal(await handler.getActive(), true);
   });
 
-  it("returns to the device state if switching fails", async () => {
+  it("shows the real state again if switching fails", async () => {
     const { handler } = createAccessory();
     handler.denonClient.getPower = async () => false;
     handler.denonClient.setPower = async () => {
       throw new Error("refused");
     };
-    await assert.rejects(handler.setActive(hap.Characteristic.Active.ACTIVE));
+    await handler.setActive(hap.Characteristic.Active.ACTIVE);
+    await handler.powerChange;
     assert.equal(await handler.getActive(), false);
+    assert.equal(handler.tvService.getCharacteristic(hap.Characteristic.Active).value, hap.Characteristic.Active.INACTIVE);
   });
 
   it("rejects an invalid power on favorite", () => {

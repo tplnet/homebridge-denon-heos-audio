@@ -56,7 +56,7 @@ Not sure what your device supports? Turn on [device discovery](#1-find-your-devi
 | **Hybrid** | AV receivers and amplifiers with HEOS (e.g. Marantz Cinema series, Denon AVR-X, Denon Home Amp) | Real power on / standby | ✅ | ✅ |
 
 **Why does "power" mean "playback" with HEOS CLI?** HEOS speakers have no real standby command. The plugin therefore treats "playing" as on and "stopped/paused" as off.
-Switching on resumes the last source. If there is nothing to resume (e.g. after the speaker was restarted or a streaming session ended), or playback doesn't start within 3 seconds, the first HEOS favorite is started, so switching on also works in scenes and automations. You can choose another favorite or turn this off with `powerOnFavorite`.
+Switching on resumes the last source. If there is nothing to resume (e.g. after the speaker was restarted or a streaming session ended), or playback doesn't start within 8 seconds, the first HEOS favorite is started, so switching on also works in scenes and automations. You can choose another favorite or turn this off with `powerOnFavorite`.
 
 > **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station). Without a favorite, a speaker that has nothing to resume can't be switched on from HomeKit.
 

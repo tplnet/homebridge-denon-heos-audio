@@ -2,6 +2,13 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.2
+
+### Fixed
+
+- The tile in the Homebridge UI / Home app no longer jumps back to "off" while switching on takes a few seconds: HomeKit gets the answer immediately and switching continues in the background. If switching fails, the tile shows the real state again and the error is logged.
+- A radio station that needs a few seconds to buffer is no longer replaced by the power on favorite: the plugin now waits up to 8 seconds (before: 3) for playback to start.
+
 ## 1.2.1
 
 ### Fixed

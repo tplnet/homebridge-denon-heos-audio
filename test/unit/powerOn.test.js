@@ -70,6 +70,13 @@ describe("HEOS power on", () => {
     assert.deepEqual(commands(), ["player/get_play_state"]);
   });
 
+  it("resumes a radio station that needs a few seconds to buffer", async () => {
+    device({ states: ["stop", "stop", "stop", "stop", "stop", "play"] });
+    assert.equal(await client.setPower(true), true);
+    assert.ok(!commands().includes("browse/play_preset"));
+    assert.deepEqual(infos, []);
+  });
+
   it("resumes the current media (radio)", async () => {
     device({ states: ["stop", "play"] });
     assert.equal(await client.setPower(true), true);
@@ -106,9 +113,8 @@ describe("HEOS power on", () => {
       "player/get_play_state",
       "player/get_now_playing_media",
       "player/set_play_state",
-      "player/get_play_state",
-      "player/get_play_state",
-      "player/get_play_state",
+      // waits up to 8 s (radio streams need time to buffer)
+      ...Array(8).fill("player/get_play_state"),
       "browse/play_preset",
     ]);
     assert.deepEqual(infos, ["Playback did not start, starting HEOS favorite 1."]);
