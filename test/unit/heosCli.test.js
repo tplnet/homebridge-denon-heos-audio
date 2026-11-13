@@ -96,6 +96,24 @@ describe("DenonClientHeosCli response handling", () => {
     assert.equal(await pending, "off");
   });
 
+  it("treats the undocumented play state 'unknown' as stopped (power off)", async () => {
+    attachFakeSocket();
+    const pending = client.getPower();
+    await new Promise((resolve) => setImmediate(resolve));
+    receive(heos({ heos: { command: "player/get_play_state", result: "success", message: `pid=${PID}&state=unknown` } }));
+    assert.equal(await pending, false);
+    assert.deepEqual(written, [`heos://player/get_play_state?pid=${PID}\r\n`]);
+  });
+
+  it("still sends 'stop' when switching off", async () => {
+    attachFakeSocket();
+    const pending = client.setPower(false);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(written, [`heos://player/set_play_state?pid=${PID}&state=stop\r\n`]);
+    receive(heos({ heos: { command: "player/set_play_state", result: "success", message: `pid=${PID}&state=stop` } }));
+    assert.equal(await pending, false);
+  });
+
   it("dispatches change events to the update callbacks", () => {
     const updates = [];
     client.volumeUpdateCallback = (v) => updates.push(["volume", v]);
@@ -105,11 +123,13 @@ describe("DenonClientHeosCli response handling", () => {
     receive(heos({ heos: { command: "event/player_volume_changed", message: `pid=${PID}&level=42&mute=off` } }));
     receive(heos({ heos: { command: "event/player_state_changed", message: `pid=${PID}&state=play` } }));
     receive(heos({ heos: { command: "event/player_state_changed", message: `pid=999&state=pause` } }));
+    receive(heos({ heos: { command: "event/player_state_changed", message: `pid=${PID}&state=unknown` } }));
 
     assert.deepEqual(updates, [
       ["mute", false],
       ["volume", 42],
       ["power", true],
+      ["power", false],
     ]);
   });
 });

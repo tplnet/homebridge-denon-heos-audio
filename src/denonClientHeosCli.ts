@@ -82,6 +82,12 @@ export class DenonClientHeosCli extends DenonClient {
           VALUE: "stop",
           MAP: Playing.STOP,
         },
+        // Not part of the HEOS CLI specification, but sent by HEOS devices without an active source
+        // (e.g. a Denon Home 150 after startup). Must come after STOP, so STOP is still sent as "stop".
+        UNKNOWN: {
+          VALUE: "unknown",
+          MAP: Playing.STOP,
+        },
       },
     },
     PLAY_NEXT: {
