@@ -57,7 +57,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 
 | Check | Home 150 | Home 250 | Home Amp | Cinema 60 |
 | --- | :-: | :-: | :-: | :-: |
-| Power on / off from the Home app | ☐ | ☐ | ☐ | ☐ |
+| Power on / off from the Home app | ✅ (Office) | ☐ | ☐ | ✅ |
 | Power state updates when changed on the device / in the HEOS app | ☐ | ☐ | ☐ | ☐ |
 | Volume slider sets the volume | ☐ | ☐ | ☐ | ☐ |
 | Volume changed on the device updates the slider | ☐ | ☐ | ☐ | ☐ |
