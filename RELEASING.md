@@ -1,45 +1,32 @@
 # Releasing
 
-New versions are published to npm automatically by the [Publish workflow](.github/workflows/publish.yml) when a GitHub release is published.
-
-## One-time setup
-
-The first version (1.0.0) is published manually, because npm only allows configuring Trusted Publishing for an existing package:
-
-```bash
-npm login
-npm publish
-```
-
-Then connect npm and GitHub:
-
-1. **npmjs.com** → package `@tplnet/homebridge-denon-heos-audio` → **Settings** → **Trusted Publisher** → **GitHub Actions**:
-   - Organization or user: `tplnet`
-   - Repository: `homebridge-denon-heos-audio`
-   - Workflow filename: `publish.yml`
-   - Environment name: `npm`
-2. Same page, **Publishing access**: choose *Require two-factor authentication and disallow tokens*. From now on only the workflow (and you with 2FA) can publish.
-3. **GitHub** → repository → **Settings** → **Environments** → **New environment** `npm`. Optionally add yourself as *required reviewer*, so every publish needs a click from you.
-
-No npm token is stored in GitHub.
+A new version is published with **one command**. Pushing a version tag starts the [Publish workflow](.github/workflows/publish.yml),
+which publishes the package to npm (with provenance) and creates the GitHub release with the notes from `CHANGELOG.md`.
 
 ## Publishing a new version
 
-1. Update `CHANGELOG.md` (new section at the top).
-2. Run all checks locally (audit, lint, tests, smoke test):
+1. Add a section for the new version at the top of `CHANGELOG.md`, e.g. `## 1.1.0`, and commit it.
+2. Run:
 
    ```bash
-   npm run check
+   npm version 1.1.0      # or: npm version patch | minor | major
    ```
 
-3. Set the version, commit and tag:
+   This
+   - runs all checks first (`npm audit`, lint, unit tests, smoke test),
+   - stops if `CHANGELOG.md` has no section for the new version,
+   - sets the version, commits, tags (`v1.1.0`) and pushes.
 
-   ```bash
-   npm version 1.1.0 -m "release: %s"   # or: npm version patch / minor / major
-   git push --follow-tags
-   ```
+That's it. The workflow then checks the tag against `package.json`, runs `npm audit`, lint, tests and the smoke test against the latest Homebridge release,
+publishes to npm and creates the GitHub release. Follow it under **Actions** on GitHub.
 
-4. GitHub → **Releases** → **Draft a new release** → choose the tag (e.g. `v1.1.0`) → title `1.1.0` → paste the changelog section → **Publish release**.
+Versions with a suffix (e.g. `1.1.0-beta.1`) are published with the npm tag `next` and marked as pre-release on GitHub, so they are not offered as an update in the Homebridge UI.
 
-The workflow then checks that the tag matches `package.json`, runs `npm audit`, lint, tests and the smoke test against the latest Homebridge, and publishes to npm with provenance.
-Versions with a suffix (e.g. `1.1.0-beta.1`) are published with the npm tag `next`, so they are not offered as an update in the Homebridge UI.
+## One-time setup (already done)
+
+1. The first version was published manually (`npm login`, `npm publish`), because npm only allows Trusted Publishing for an existing package.
+2. **npmjs.com** → package → **Settings** → **Trusted Publisher** → **GitHub Actions**: user `tplnet`, repository `homebridge-denon-heos-audio`, workflow `publish.yml`, environment `npm`.
+3. **Publishing access**: *Require two-factor authentication and disallow tokens*.
+4. **GitHub** → **Settings** → **Environments** → environment `npm` (optionally with yourself as *required reviewer*, then every publish waits for your approval).
+
+No npm token is stored in GitHub.

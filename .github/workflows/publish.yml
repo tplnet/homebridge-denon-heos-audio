@@ -1,15 +1,15 @@
 name: Publish to npm
 
-# Publishes the package when a GitHub release is published.
+# Publishes the package to npm and creates the GitHub release when a version tag (v1.2.3) is pushed.
+# `npm version <x.y.z>` creates and pushes the tag (see RELEASING.md).
 # Uses npm Trusted Publishing (OIDC): no npm token is stored in GitHub, and npm adds a
 # provenance statement that links the published version to this repository and commit.
-# Setup: see RELEASING.md.
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
 
 permissions:
-  contents: read
+  contents: write # create the GitHub release
   id-token: write # required for npm Trusted Publishing / provenance
 
 jobs:
@@ -36,6 +36,15 @@ jobs:
             exit 1
           fi
 
+      - name: Extract the release notes from CHANGELOG.md
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          awk -v v="$VERSION" '/^## /{ if (found) exit; if ($2 == v) { found = 1; next } } found' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md has no section '## ${VERSION}'"
+            exit 1
+          fi
+
       - run: npm ci
 
       - name: Security audit (CVE)
@@ -58,3 +67,16 @@ jobs:
           else
             npm publish
           fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists."
+            exit 0
+          fi
+          FLAGS=""
+          if [[ "$VERSION" == *-* ]]; then FLAGS="--prerelease"; fi
+          gh release create "${GITHUB_REF_NAME}" --verify-tag --title "${VERSION}" --notes-file release-notes.md $FLAGS

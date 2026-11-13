@@ -54,7 +54,10 @@
     "smoke": "npm run build && node scripts/smoke-test.mjs",
     "check": "npm audit && npm run lint && npm test && node scripts/smoke-test.mjs",
     "prepublishOnly": "npm run lint && npm test",
-    "watch": "npm run build && npm link && nodemon"
+    "watch": "npm run build && npm link && nodemon",
+    "preversion": "npm run check",
+    "version": "node scripts/check-changelog.mjs",
+    "postversion": "git push --follow-tags"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
