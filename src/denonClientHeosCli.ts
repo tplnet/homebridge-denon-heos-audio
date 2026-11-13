@@ -29,7 +29,8 @@ export class DenonClientHeosCli extends DenonClient {
 
   protected static readonly PROTOCOL = {
     GLOBAL_CHANGE_EVENT_REGEX: /^event\/(\w+)$/,
-    PID_REGEX: /pid=(\d+)/,
+    // player ids can be negative (e.g. pid=-1234567890)
+    PID_REGEX: /(?:^|&)pid=(-?\d+)/,
     EVENT_SUB: {
       SET: {
         COMMAND: "system/register_for_change_events",

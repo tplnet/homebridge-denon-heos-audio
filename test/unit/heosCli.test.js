@@ -88,6 +88,26 @@ describe("DenonClientHeosCli response handling", () => {
     await assert.rejects(pending, CommandFailedException);
   });
 
+  it("handles negative player ids (responses and events)", async () => {
+    const NEGATIVE = -1234567890;
+    client.player_id = NEGATIVE;
+    try {
+      attachFakeSocket();
+      const pending = client.sendUnchecked(`player/get_volume?pid=${NEGATIVE}`, "player/get_volume", /level=(\d+)/);
+      // a response for the player with the positive id must not be taken
+      receive(heos({ heos: { command: "player/get_volume", result: "success", message: `pid=1234567890&level=99` } }));
+      receive(heos({ heos: { command: "player/get_volume", result: "success", message: `pid=${NEGATIVE}&level=17` } }));
+      assert.equal(await pending, "17");
+
+      const volumes = [];
+      client.volumeUpdateCallback = (v) => volumes.push(v);
+      receive(heos({ heos: { command: "event/player_volume_changed", message: `pid=${NEGATIVE}&level=33&mute=off` } }));
+      assert.deepEqual(volumes, [33]);
+    } finally {
+      client.player_id = PID;
+    }
+  });
+
   it("ignores responses for other players", async () => {
     attachFakeSocket();
     const pending = client.sendUnchecked(`player/get_mute?pid=${PID}`, "player/get_mute", /state=(\w+)/);
