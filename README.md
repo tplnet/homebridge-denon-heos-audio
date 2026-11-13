@@ -90,7 +90,7 @@ There are two ways to set up your devices. You can combine them.
 | Name in the Home app | Name from the HEOS app | Your choice |
 | Control protocol | Chosen automatically (Hybrid if supported) | Your choice |
 | Inputs, volume limit, step size | Defaults (no input list) | Fully configurable |
-| Device switched on later | Added when it announces itself | Always present (shows *No Response* while off) |
+| Device switched on later | Added with the next search (every 2 min) | Always present (shows *No Response* while off) |
 
 **Rule of thumb:** use automatic setup for simple speakers and add AV receivers or amplifiers whose inputs you want to switch manually.
 Devices that you configure manually are **never** touched by the automatic setup, even if they are discovered.
@@ -108,7 +108,7 @@ In the plugin settings, enable **Device Discovery** and restart Homebridge. Afte
 [Platform] Supported modes: AVRCONTROL, HEOSCLI
 ```
 
-> Make sure Homebridge's log level is at least *info*. Discovery uses SSDP/UPnP, so Homebridge and the devices must be in the same network (no VLAN or guest network separation). Some devices answer only after 30 seconds or more.
+> Make sure Homebridge's log level is at least *info*. Discovery uses SSDP/UPnP and only asks for HEOS devices (search target `urn:schemas-denon-com:device:ACT-Denon:1`), so other devices in your network are not contacted. Homebridge and the devices must be in the same network (no VLAN or guest network separation).
 
 ### Step 2: Give the devices a fixed IP address
 
@@ -127,7 +127,7 @@ The log confirms every device: `Automatically adding discovered device 'Patio Mu
 
 To leave out a device, add its serial number to **Excluded Devices** (`excludedSerialNumbers`).
 
-Discovery keeps running in the background. A device that is switched on later is added as soon as it announces itself in the network. If the discovery fails (for example after a network change), it restarts automatically after 1 to 30 minutes.
+Discovery keeps running in the background and searches for HEOS devices every 2 minutes, so a device that is switched on later is added with the next search. If the discovery fails (for example after a network change), it restarts automatically after 1 to 30 minutes.
 
 ### Step 3b: Manual setup
 

@@ -1,5 +1,4 @@
 import type { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from "homebridge";
-import ssdp, { SSDP, Service as SsdpService } from "@achingbrain/ssdp";
 
 import { DenonAudioAccessory as DenonAudioAccessory } from "./platformAccessory.js";
 import * as CustomLogging from "./customLogging.js";
@@ -7,17 +6,9 @@ import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import type { DeviceConfig } from "./config.js";
 import { buildDiscoveredDeviceConfig } from "./discovery.js";
-
-const SUPPORTED_BRANDS = ["denon", "marantz"];
+import { DiscoveredHeosDevice, HeosDiscovery } from "./heosDiscovery.js";
 
 const MINUTE = 60 * 1000;
-
-/**
- * Errors of the UDP sockets (bind, send, ...) are Node.js system errors with a 'syscall' property.
- */
-function isSocketError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "syscall" in error;
-}
 
 export class DenonAudioPlatform implements DynamicPlatformPlugin {
   public readonly rawLog: Logger;
@@ -35,8 +26,8 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private readonly activeSerialNumbers = new Set<string>();
 
   // device discovery
-  private ssdpFactory: () => Promise<SSDP> = () => ssdp();
-  private ssdpBus: SSDP | undefined;
+  private discoveryFactory: () => HeosDiscovery = () => new HeosDiscovery({ debugLog: this.log.debug.bind(this.log) });
+  private activeDiscovery: HeosDiscovery | undefined;
   private discoveryRestartDelaysMs = [1 * MINUTE, 5 * MINUTE, 15 * MINUTE, 30 * MINUTE];
   private discoveryRestartTimer: NodeJS.Timeout | undefined;
   // ends the current discovery session or restart delay immediately (used on shutdown)
@@ -66,7 +57,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     this.api.on("shutdown", () => {
       this.shuttingDown = true;
       clearTimeout(this.discoveryRestartTimer);
-      this.ssdpBus?.stop().catch(() => {});
+      this.activeDiscovery?.stop();
       this.interruptDiscovery?.();
     });
   }
@@ -230,99 +221,54 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
   /**
    * Runs one discovery session.
-   * @returns a promise that resolves with the error that ended the session (undefined if it simply ended)
+   * @returns a promise that resolves with the socket error that ended the session (undefined if it was interrupted)
    */
   async discoverSsdpDevices(): Promise<unknown> {
-    let bus: SSDP;
-    try {
-      bus = await this.ssdpFactory();
-    } catch (error) {
-      return error;
-    }
-    this.ssdpBus = bus;
-
+    const discovery = this.discoveryFactory();
+    this.activeDiscovery = discovery;
     try {
       return await new Promise<unknown>((resolve) => {
         this.interruptDiscovery = () => resolve(undefined);
-        bus.on("error", (error: unknown) => {
-          // The SSDP library also reports problems of single devices as 'error' (e.g. a device description that
-          // can't be fetched). Only network / socket errors stop the discovery; everything else is ignored.
-          if (isSocketError(error)) {
-            resolve(error);
-          } else {
-            this.log.debug("Ignoring error of a single device in the device discovery:", error instanceof Error ? error.message : error);
-          }
+        discovery.on("error", resolve);
+        discovery.on("device", (device: DiscoveredHeosDevice) => {
+          this.checkDiscoveredDevice(device).catch((error) => {
+            // a single misbehaving device must not stop the discovery
+            this.log.debug("Error while checking a discovered device:", error);
+          });
         });
-        (async () => {
-          for await (const service of bus.discover()) {
-            if (this.shuttingDown) {
-              break;
-            }
-            try {
-              await this.checkSsdpDevice(service);
-            } catch (error) {
-              // a single misbehaving device must not stop the discovery
-              this.log.debug("Error while checking a discovered device:", error);
-            }
-          }
-        })().then(() => resolve(undefined), resolve);
+        discovery.start().catch(resolve);
       });
     } finally {
       this.interruptDiscovery = undefined;
-      this.ssdpBus = undefined;
-      bus.stop().catch(() => {});
+      this.activeDiscovery = undefined;
+      discovery.stop();
     }
   }
 
-  async checkSsdpDevice(service: SsdpService) {
-    const device = service.details?.device;
-    const serial: string | undefined = device?.serialNumber;
-    if (!serial || this.ssdpSeenSerialNumbers.has(serial)) {
+  async checkDiscoveredDevice(device: DiscoveredHeosDevice) {
+    const serial = device.serialNumber;
+    if (this.ssdpSeenSerialNumbers.has(serial)) {
       return;
     }
     this.ssdpSeenSerialNumbers.add(serial);
 
-    // HEOS devices are made by Denon and Marantz (Sound United / Masimo); both use the same control protocols.
-    const identification = [device.manufacturer, device.manufacturerURL, device.modelName, device.friendlyName].join(" ").toLowerCase();
-    if (!SUPPORTED_BRANDS.some((brand) => identification.includes(brand))) {
-      return;
-    }
-
-    if (!service.location?.href) {
-      return;
-    }
-
-    try {
-      const response = await fetch(service.location.href, { signal: AbortSignal.timeout(5000) });
-      response.body?.cancel().catch(() => {});
-      if (!response.ok) {
-        this.log.debug(`Received a non-200 status code while connecting to a new device's location href (status code: ${response.status}).`);
-        return;
-      }
-    } catch (error) {
-      this.log.debug("An error occured while connecting to a new device's location href.", error);
-      // try again with the next announcement of this device
-      this.ssdpSeenSerialNumbers.delete(serial);
-      return;
-    }
-
-    this.log.debug("Checking protocol support for:", service.location.hostname);
-    const supportedModes = await DenonProtocol.checkProtocolSupport(service.location.hostname, this.log.debug.bind(this.log));
+    this.log.debug("Checking protocol support for:", device.ip);
+    const supportedModes = await DenonProtocol.checkProtocolSupport(device.ip, this.log.debug.bind(this.log));
     if (supportedModes.length === 0) {
       return;
     }
 
     this.log.success("-------------------------------------------------------");
     this.log.success("Found Denon / Marantz device in local network:");
-    this.log.success("Friendly name:", device.friendlyName);
-    this.log.success("Model name:   ", device.modelName);
+    this.log.success("Friendly name:", device.friendlyName ?? "unknown");
+    this.log.success("Model name:   ", device.modelName ?? "unknown");
     this.log.success("Serial number:", serial);
-    this.log.success("IP address:   ", service.location.hostname);
+    this.log.success("IP address:   ", device.ip);
     this.log.success("Supported modes:", supportedModes.map((mode) => DenonProtocol.ControlMode[mode]).join(", "));
     this.log.success("-------------------------------------------------------");
 
     if (this.autoAddEnabled()) {
-      this.autoAddDiscoveredDevice(serial, service.location.hostname, device.friendlyName, device.modelName, supportedModes);
+      this.autoAddDiscoveredDevice(serial, device.ip, device.friendlyName, device.modelName, supportedModes);
     }
   }
 }

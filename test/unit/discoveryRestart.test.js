@@ -18,57 +18,42 @@ function createPlatform() {
   return { platform, shutdown: () => handlers.shutdown() };
 }
 
-/** Fake SSDP bus: emits the given services, then either fails or keeps waiting. */
-function fakeBus({ services = [], failWith }) {
-  const bus = new EventEmitter();
-  bus.stopped = false;
-  bus.stop = async () => {
-    bus.stopped = true;
+/** Fake discovery: emits the given devices after start, then optionally fails. */
+function fakeDiscovery({ devices = [], failWith, startError }) {
+  const discovery = new EventEmitter();
+  discovery.stopped = false;
+  discovery.stop = () => {
+    discovery.stopped = true;
   };
-  bus.discover = async function* () {
-    for (const service of services) {
-      yield service;
+  discovery.start = async () => {
+    if (startError) {
+      throw startError;
     }
-    if (failWith) {
-      setImmediate(() => bus.emit("error", failWith));
-    }
-    await new Promise(() => {}); // a real discovery never ends by itself
+    setImmediate(() => {
+      devices.forEach((device) => discovery.emit("device", device));
+      if (failWith) {
+        discovery.emit("error", failWith);
+      }
+    });
   };
-  return bus;
+  return discovery;
 }
 
-describe("device discovery", () => {
-  it("restarts after the discovery service failed", async () => {
+describe("device discovery lifecycle", () => {
+  it("restarts after a socket error", async () => {
     const { platform, shutdown } = createPlatform();
-    const socketError = Object.assign(new Error("send EHOSTUNREACH"), { syscall: "send", code: "EHOSTUNREACH" });
-    const buses = [fakeBus({ failWith: socketError }), fakeBus({ services: [{ id: "later-device" }] })];
+    const discoveries = [fakeDiscovery({ failWith: new Error("send EMFILE") }), fakeDiscovery({ devices: [{ serialNumber: "later-device" }] })];
     const checked = [];
     let created = 0;
-    platform.ssdpFactory = async () => buses[created++];
-    platform.checkSsdpDevice = async (service) => checked.push(service.id);
+    platform.discoveryFactory = () => discoveries[created++];
+    platform.checkDiscoveredDevice = async (device) => checked.push(device.serialNumber);
 
     platform.runDeviceDiscovery();
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     assert.equal(created, 2, "discovery was restarted once");
-    assert.ok(buses[0].stopped, "the failed bus was stopped");
+    assert.ok(discoveries[0].stopped, "the failed discovery was stopped");
     assert.deepEqual(checked, ["later-device"], "devices are found after the restart");
-    shutdown();
-  });
-
-  it("ignores errors of single devices reported by the SSDP library", async () => {
-    const { platform, shutdown } = createPlatform();
-    let created = 0;
-    platform.ssdpFactory = async () => {
-      created++;
-      return fakeBus({ failWith: new TypeError("fetch failed") });
-    };
-    platform.checkSsdpDevice = async () => {};
-
-    platform.runDeviceDiscovery();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    assert.equal(created, 1, "discovery was not restarted");
     shutdown();
   });
 
@@ -76,15 +61,15 @@ describe("device discovery", () => {
     const { platform, shutdown } = createPlatform();
     const checked = [];
     let created = 0;
-    platform.ssdpFactory = async () => {
+    platform.discoveryFactory = () => {
       created++;
-      return fakeBus({ services: [{ id: "broken" }, { id: "ok" }] });
+      return fakeDiscovery({ devices: [{ serialNumber: "broken" }, { serialNumber: "ok" }] });
     };
-    platform.checkSsdpDevice = async (service) => {
-      if (service.id === "broken") {
+    platform.checkDiscoveredDevice = async (device) => {
+      if (device.serialNumber === "broken") {
         throw new Error("boom");
       }
-      checked.push(service.id);
+      checked.push(device.serialNumber);
     };
 
     platform.runDeviceDiscovery();
@@ -95,15 +80,12 @@ describe("device discovery", () => {
     shutdown();
   });
 
-  it("retries if the discovery service can't be started", async () => {
+  it("retries if the discovery can't be started", async () => {
     const { platform, shutdown } = createPlatform();
     let attempts = 0;
-    platform.ssdpFactory = async () => {
+    platform.discoveryFactory = () => {
       attempts++;
-      if (attempts < 3) {
-        throw new Error("EADDRINUSE");
-      }
-      return fakeBus({});
+      return fakeDiscovery(attempts < 3 ? { startError: new Error("EADDRINUSE") } : {});
     };
 
     platform.runDeviceDiscovery();
@@ -113,12 +95,14 @@ describe("device discovery", () => {
     shutdown();
   });
 
-  it("stops restarting after Homebridge shuts down", async () => {
+  it("stops after Homebridge shuts down", async () => {
     const { platform, shutdown } = createPlatform();
     let created = 0;
-    platform.ssdpFactory = async () => {
+    let last;
+    platform.discoveryFactory = () => {
       created++;
-      return fakeBus({ failWith: Object.assign(new Error("fail"), { syscall: "bind" }) });
+      last = fakeDiscovery({ failWith: new Error("fail") });
+      return last;
     };
 
     const running = platform.runDeviceDiscovery();
@@ -128,5 +112,6 @@ describe("device discovery", () => {
     const createdAtShutdown = created;
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(created, createdAtShutdown, "no restart after shutdown");
+    assert.ok(last.stopped);
   });
 });

@@ -2,7 +2,7 @@
   "name": "@tplnet/homebridge-denon-heos-audio",
   "displayName": "Homebridge Denon Heos Audio (tplnet)",
   "type": "module",
-  "version": "1.0.0-beta.1-tplnet.5",
+  "version": "1.0.0-beta.1-tplnet.6",
   "description": "Control your Denon and Marantz HEOS speakers, amplifiers and AVRs via AVR Control and/or HEOS CLI",
   "author": "tplnet",
   "contributors": [
@@ -58,7 +58,6 @@
     "typescript-eslint": "^8.72.2"
   },
   "dependencies": {
-    "@achingbrain/ssdp": "^4.2.1",
     "@xmldom/xmldom": "^0.9.12",
     "async-mutex": "^0.5.0",
     "date-fns": "^4.1.0"
