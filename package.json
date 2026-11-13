@@ -18,7 +18,8 @@
     "url": "https://github.com/tplnet/homebridge-denon-heos-audio/issues"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "keywords": [
     "homebridge",

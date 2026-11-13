@@ -6,8 +6,9 @@ All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-de
 
 ### Changed
 
-- Releases are now published to npm by GitHub Actions with npm Trusted Publishing and provenance: every version on npm can be traced back to the GitHub commit it was built from. Before publishing, the workflow checks for known vulnerabilities (`npm audit`) and runs the tests and a compatibility test with the latest Homebridge release.
-- A release is a single command (`npm version x.y.z`): it runs all checks, pushes the version tag, and the workflow publishes to npm and creates the GitHub release with the notes from this changelog ([RELEASING.md](RELEASING.md)).
+- Releases are built by GitHub Actions and staged on npm with Trusted Publishing and provenance: every version on npm can be traced back to the GitHub commit it was built from, and it only becomes public after approval with 2FA / passkey. Before staging, the workflow checks for known vulnerabilities (`npm audit`) and runs the tests and a compatibility test with the latest Homebridge release.
+- A release is a single command (`npm version x.y.z`); the GitHub release is created automatically with the notes from this changelog ([RELEASING.md](RELEASING.md)).
+- CI also tests with Node.js 26.
 
 No changes to the plugin itself.
 
