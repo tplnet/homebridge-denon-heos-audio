@@ -2,6 +2,12 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.1.2
+
+### Fixed
+
+- Switching on (HEOS CLI) also starts the HEOS favorite when the speaker reports "paused" but has nothing to play: if the current media is empty, or if the speaker accepts the play command but playback doesn't start within 3 seconds. Seen on a Denon Home Amp after a streaming session.
+
 ## 1.1.1
 
 ### Changed

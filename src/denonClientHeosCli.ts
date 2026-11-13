@@ -279,6 +279,8 @@ export class DenonClientHeosCli extends DenonClient {
   private player_id: number | undefined;
   /** HEOS favorite (1, 2, …) that is started when switching on without something to resume; 0 = disabled. */
   private powerOnFavorite = 1;
+  private static readonly PLAY_VERIFY_CHECKS = 3;
+  private playVerifyIntervalMs = 1000;
   /** Log for actions the user should see without debug logging (e.g. starting the power on favorite). */
   private infoLog: (message: string) => void = (message) => this.debugLog(message);
   private player_name: string | undefined;
@@ -545,24 +547,63 @@ export class DenonClientHeosCli extends DenonClient {
   }
 
   private async powerOn(): Promise<boolean> {
+    const PLAY = DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.PLAY.VALUE;
     const rawState = await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_STATE, CommandMode.GET, {});
-    if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.PLAY.VALUE) {
+    if (rawState === PLAY) {
       this.debugLog("Already playing, nothing to do.");
       return true;
     }
-    if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.UNKNOWN.VALUE && this.powerOnFavorite > 0) {
-      this.infoLog(`Nothing to resume, starting HEOS favorite ${this.powerOnFavorite}.`);
-      return this.playFavorite(this.powerOnFavorite);
+
+    const favorite = this.powerOnFavorite;
+    if (favorite > 0) {
+      if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.UNKNOWN.VALUE) {
+        this.infoLog(`Nothing to resume, starting HEOS favorite ${favorite}.`);
+        return this.playFavorite(favorite);
+      }
+      if (await this.hasNoMedia()) {
+        this.infoLog(`Nothing to resume (no current media), starting HEOS favorite ${favorite}.`);
+        return this.playFavorite(favorite);
+      }
     }
 
     try {
-      return isPlaying[await this.setPlaying(Playing.PLAY)];
+      await this.setPlaying(Playing.PLAY);
     } catch (error) {
-      if (!(error instanceof CommandFailedException) || this.powerOnFavorite <= 0) {
+      if (!(error instanceof CommandFailedException) || favorite <= 0) {
         throw error;
       }
-      this.infoLog(`The speaker refused to resume playback, starting HEOS favorite ${this.powerOnFavorite}.`);
-      return this.playFavorite(this.powerOnFavorite);
+      this.infoLog(`The speaker refused to resume playback, starting HEOS favorite ${favorite}.`);
+      return this.playFavorite(favorite);
+    }
+
+    if (favorite <= 0) {
+      return true;
+    }
+
+    // Some devices accept "play" without having anything to play (they stay paused), so check that playback started.
+    for (let check = 0; check < DenonClientHeosCli.PLAY_VERIFY_CHECKS; check++) {
+      await new Promise((resolve) => setTimeout(resolve, this.playVerifyIntervalMs));
+      if ((await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_STATE, CommandMode.GET, {})) === PLAY) {
+        return true;
+      }
+    }
+    this.infoLog(`Playback did not start, starting HEOS favorite ${favorite}.`);
+    return this.playFavorite(favorite);
+  }
+
+  /**
+   * True if the player has no current media to resume (e.g. an empty entry after a streaming session ended).
+   */
+  private async hasNoMedia(): Promise<boolean> {
+    try {
+      const payload = JSON.parse(await this.sendCommand(DenonClientHeosCli.PROTOCOL.INPUT, CommandMode.GET, { passPayload: true }));
+      if (typeof payload?.mid === "string" && payload.mid.startsWith("inputs/")) {
+        return false; // a physical input can always be resumed
+      }
+      return ["song", "station", "artist", "album"].every((field) => !payload?.[field]);
+    } catch (error) {
+      this.debugLog("Could not read the current media:", error instanceof Error ? error.message : error);
+      return false;
     }
   }
 
