@@ -102,6 +102,15 @@
               "maximum": 10,
               "default": 2
             },
+            "powerOnFavorite": {
+              "title": "Power On Favorite",
+              "description": "HEOS CLI only: if a speaker has nothing to resume when it is switched on, this HEOS favorite is started (1 = first favorite in the HEOS app). 0 = disabled.",
+              "type": "integer",
+              "required": false,
+              "minimum": 0,
+              "maximum": 50,
+              "default": 1
+            },
             "inputs": {
               "title": "Inputs",
               "description": "The list of inputs to your device. If you configure inputs here, those inputs will become selectable in the Home app.",

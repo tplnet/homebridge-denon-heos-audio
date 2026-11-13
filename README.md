@@ -225,6 +225,7 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 | `devices[].volumeLimitEnabled` | no | `false` | Enables the volume limit. |
 | `devices[].volumeLimit` | no | `99` | 0–99. With a limit, 100 % in the Home app equals this value on the device. |
 | `devices[].volumeStepSize` | no | `2` | 1–10. Volume change per press of the volume buttons in the Remote. |
+| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (1 = first favorite in the HEOS app, 0 = disabled). Also used for automatically added devices. |
 | `devices[].inputs` | no | `[]` | Inputs to show in the Home app, see [Inputs](#inputs). |
 | `devices[].inputs[].inputID` | yes | | Input ID (depends on the protocol, see below). |
 | `devices[].inputs[].name` | yes | | Name shown in the Home app. |
@@ -268,7 +269,7 @@ Streaming sources (Spotify, TuneIn, AirPlay, …) are recognised and shown as th
 
 | Action | What happens |
 | --- | --- |
-| Power button | Power on / standby (AVR Control, Hybrid) or play / stop (HEOS CLI) |
+| Power button | Power on / standby (AVR Control, Hybrid) or play / stop (HEOS CLI). With HEOS CLI, switching on resumes the last source; if there is none, the first HEOS favorite is started (see `powerOnFavorite`). |
 | Input picker | Switches the input |
 | Control Center → Remote → volume buttons on your iPhone | Volume up / down by `volumeStepSize` |
 | Remote → centre button / play-pause | Play / pause (HEOS CLI, Hybrid) |

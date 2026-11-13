@@ -91,6 +91,15 @@ export class DenonClientHeosCli extends DenonClient {
         },
       },
     },
+    PLAY_PRESET: {
+      // plays a HEOS favorite (preset position starting at 1)
+      SET: {
+        COMMAND: "browse/play_preset",
+        PARAMS: "?pid=[PID]&preset=[VALUE]",
+        EXP_RES: /preset=(\d+)/,
+        TIMEOUT: 6000,
+      },
+    },
     PLAY_NEXT: {
       SET: {
         COMMAND: "player/play_next",
@@ -268,6 +277,8 @@ export class DenonClientHeosCli extends DenonClient {
   public readonly displayOnlyInputs = DenonClientHeosCli.DISPLAY_ONLY_INPUT_SOURCES;
 
   private player_id: number | undefined;
+  /** HEOS favorite (1, 2, …) that is started when switching on without something to resume; 0 = disabled. */
+  private powerOnFavorite = 1;
   private player_name: string | undefined;
 
   constructor(
@@ -509,12 +520,46 @@ export class DenonClientHeosCli extends DenonClient {
     return isPlaying[playing];
   }
 
+  public setPowerOnFavorite(preset: number) {
+    this.powerOnFavorite = preset;
+  }
+
+  /**
+   * Switching on means starting playback. If there is nothing to resume (play state "unknown", e.g. no source
+   * since the speaker was started) or the device refuses to play, the configured HEOS favorite is started instead.
+   */
   public async setPower(power: boolean): Promise<boolean> {
-    const newPlaying = await this.setPlaying(power ? Playing.PLAY : Playing.STOP);
-    if (this.powerUpdateCallback) {
-      this.powerUpdateCallback(isPlaying[newPlaying]);
+    let playing: boolean;
+    if (!power) {
+      playing = isPlaying[await this.setPlaying(Playing.STOP)];
+    } else {
+      playing = await this.powerOn();
     }
-    return isPlaying[newPlaying];
+    this.powerUpdateCallback?.(playing);
+    return playing;
+  }
+
+  private async powerOn(): Promise<boolean> {
+    const rawState = await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_STATE, CommandMode.GET, {});
+    if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.UNKNOWN.VALUE && this.powerOnFavorite > 0) {
+      this.debugLog(`Nothing to resume (play state "${rawState}"), starting HEOS favorite ${this.powerOnFavorite}.`);
+      return this.playFavorite(this.powerOnFavorite);
+    }
+
+    try {
+      return isPlaying[await this.setPlaying(Playing.PLAY)];
+    } catch (error) {
+      if (!(error instanceof CommandFailedException) || this.powerOnFavorite <= 0) {
+        throw error;
+      }
+      this.debugLog(`The device refused to resume playback, starting HEOS favorite ${this.powerOnFavorite}.`);
+      return this.playFavorite(this.powerOnFavorite);
+    }
+  }
+
+  private async playFavorite(preset: number): Promise<boolean> {
+    await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_PRESET, CommandMode.SET, { value: preset.toString() });
+    return true;
   }
 
   public async getMute(raceStatus?: RaceStatus): Promise<boolean> {

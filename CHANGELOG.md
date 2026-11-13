@@ -2,6 +2,16 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.1.0
+
+### New
+
+- **Switching on always plays something (HEOS CLI):** if a speaker has nothing to resume (no active source, e.g. after a restart) or refuses to resume, the first HEOS favorite is started. This makes switching on via scenes and automations reliable. Configurable per device with `powerOnFavorite` (number of the favorite, 0 = disabled).
+
+### Fixed
+
+- After switching on or off, the tile could briefly jump back to the old state, because devices report the old state for a moment. The new state is now kept for a few seconds, unless the device reports a different change (e.g. from the HEOS app).
+
 ## 1.0.1
 
 ### Changed

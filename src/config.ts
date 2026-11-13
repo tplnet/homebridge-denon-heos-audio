@@ -16,5 +16,6 @@ export interface DeviceConfig {
   volumeLimitEnabled?: boolean;
   volumeLimit?: number;
   volumeStepSize?: number;
+  powerOnFavorite?: number;
   inputs?: InputConfig[];
 }

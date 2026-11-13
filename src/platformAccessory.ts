@@ -21,6 +21,9 @@ export class DenonAudioAccessory {
   private static readonly API_CONNECT_TIMEOUT = 5 * 1000;
   private static readonly API_RESPONSE_TIMEOUT = 1 * 1000;
   private static readonly DEFAULT_VOLUME_STEP_SIZE = 2;
+  private static readonly DEFAULT_POWER_ON_FAVORITE = 1;
+  // after switching, devices report the old state for a moment; HomeKit gets the new state during this time
+  private static readonly POWER_STATE_SETTLE_TIME = 5 * 1000;
   // includes the time to connect to the device and to look up the player id
   private static readonly INPUT_QUERY_TIMEOUT = 15 * 1000;
   private static readonly DEFAULT_VOLUME_LIMIT = 99;
@@ -51,6 +54,7 @@ export class DenonAudioAccessory {
   private targetMediaState: Playing | undefined;
 
   private volumeChangeOngoing = false;
+  private pendingActive: { value: boolean; until: number } | undefined;
   private playingChangeOngoing = false;
 
   constructor(platform: DenonAudioPlatform, accessory: PlatformAccessory, config: DeviceConfig, log: Logger) {
@@ -135,6 +139,12 @@ export class DenonAudioAccessory {
       this.callbackVolume.bind(this),
       this.callbackInput.bind(this),
     );
+
+    const powerOnFavorite = config.powerOnFavorite ?? DenonAudioAccessory.DEFAULT_POWER_ON_FAVORITE;
+    if (!Number.isInteger(powerOnFavorite) || powerOnFavorite < 0) {
+      throw new Error("Power on favorite must be 0 (disabled) or the number of a HEOS favorite (1, 2, …)");
+    }
+    this.denonClient.setPowerOnFavorite?.(powerOnFavorite);
 
     this.configuredInputs = config.inputs ?? [];
     this.unknownInput = new ConfiguredInput("unknown", "Unknown Input", false, 0, false);
@@ -258,6 +268,11 @@ export class DenonAudioAccessory {
    * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
    */
   async getActive(): Promise<CharacteristicValue> {
+    if (this.pendingActive && Date.now() < this.pendingActive.until) {
+      this.log.debug(`getActive for ${this.name}. [recently set to ${this.pendingActive.value}]`);
+      return this.pendingActive.value;
+    }
+    this.pendingActive = undefined;
     return this.queryDevice("getActive", "power status", (raceStatus) => this.denonClient.getPower(raceStatus));
   }
 
@@ -356,9 +371,12 @@ export class DenonAudioAccessory {
 
   async setActive(newValue: CharacteristicValue) {
     this.log.debug(`setActive for ${this.name} set to ${newValue}`);
+    const active = newValue === this.platform.Characteristic.Active.ACTIVE;
     try {
-      await this.denonClient.setPower(newValue === this.platform.Characteristic.Active.ACTIVE);
+      await this.denonClient.setPower(active);
+      this.pendingActive = { value: active, until: Date.now() + DenonAudioAccessory.POWER_STATE_SETTLE_TIME };
     } catch (error) {
+      this.pendingActive = undefined;
       this.log.error(`An error occured while setting power status for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -587,6 +605,10 @@ export class DenonAudioAccessory {
    * Handles characteristic updates from the API
    */
   private callbackActive(active: boolean) {
+    if (this.pendingActive && this.pendingActive.value !== active) {
+      // changed on the device (e.g. in the HEOS app) - the device state wins
+      this.pendingActive = undefined;
+    }
     this.tvService.updateCharacteristic(this.platform.Characteristic.Active, active);
   }
 

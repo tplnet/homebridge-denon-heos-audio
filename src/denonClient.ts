@@ -65,6 +65,11 @@ export interface IDenonClient {
    * Inputs that are only used to show the current source (e.g. streaming services), if the inputs could be read from the device.
    */
   readonly displayOnlyInputs: DefaultInput[];
+  /**
+   * HEOS favorite that is started when switching on a HEOS CLI device that has nothing to resume (0 = disabled).
+   * Not used by protocols with a real power state.
+   */
+  setPowerOnFavorite?(preset: number): void;
 }
 
 export abstract class DenonClient implements IDenonClient {
