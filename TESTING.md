@@ -57,7 +57,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 
 | Check | Home 150 | Home 250 | Home Amp | Cinema 60 |
 | --- | :-: | :-: | :-: | :-: |
-| Power on / off from the Home app | ✅ (Office) | ☐ | ☐ | ✅ |
+| Power on / off from the Home app | ✅ (Office, Kids Room) | ☐ | ☐ | ✅ |
 | Power state updates when changed on the device / in the HEOS app | ☐ | ☐ | ☐ | ☐ |
 | Volume slider sets the volume | ☐ | ☐ | ☐ | ☐ |
 | Volume changed on the device updates the slider | ☐ | ☐ | ☐ | ☐ |
@@ -71,11 +71,13 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 | Remote: play / pause | ☐ | ☐ | ☐ | ☐ |
 | Remote: next / previous track | ☐ | ☐ | ☐ | ☐ |
 
-Inputs are read from the device (log: `Inputs reported by the device: …`). Expected:
+Inputs are read from the device (log: `Inputs reported by the device: …`). Verified with plugin 1.0.0-beta.1-tplnet.7 on all test devices:
 
 - Denon Home Amp: TV, Optical In, Line In
 - Denon Home 150 / 250: AUX In
 - Marantz Cinema 60: the sources enabled on the receiver (Switch, Switch 2, Apple TV, AUX2)
+
+Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control of "Kids Room" (negative id) verified with tplnet.7.
 
 ## 5. Robustness
 
