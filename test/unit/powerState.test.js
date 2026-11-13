@@ -89,3 +89,11 @@ describe("power state after switching", () => {
     );
   });
 });
+
+describe("services", () => {
+  it("links the speaker to the TV (one tile in the Home app)", () => {
+    const { handler } = createAccessory();
+    assert.ok(handler.tvService.linkedServices.includes(handler.speakerService));
+    assert.equal(handler.tvService.linkedServices.filter((s) => s === handler.speakerService).length, 1);
+  });
+});

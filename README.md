@@ -33,6 +33,7 @@ Each device appears in the Home app as a TV accessory, so you can:
 - [Using it in the Home app](#using-it-in-the-home-app)
 - [Troubleshooting](#troubleshooting)
 - [Compatibility and security](#compatibility-and-security)
+- [Privacy](#privacy)
 - [Development](#development)
 
 ## Which devices work?
@@ -338,6 +339,23 @@ Requirements: Homebridge 1.8 or newer (2.x supported), Node.js 22.12+, 24 or 26.
 Run all checks locally with `npm run check` (`npm audit`, lint, unit tests, smoke test). To test another Homebridge version, install it temporarily with `npm install --no-save homebridge@<version>`.
 
 Found a security issue? Please report it privately via GitHub (*Security* → *Report a vulnerability*) instead of a public issue.
+
+## Privacy
+
+**The plugin does not collect any data and does not send anything to the internet.** There is no telemetry, no analytics, no crash reporting and no cloud service.
+
+It only talks to your HEOS devices in the local network:
+
+| Connection | Target | Purpose |
+| --- | --- | --- |
+| SSDP search (UDP 1900, multicast) | local network | find HEOS devices (automatic setup) |
+| HTTP (device description, port 60006) | the device itself | name, model, serial number, firmware |
+| TCP 1255 (HEOS CLI) / TCP 23 (AVR Control) | the device itself | control: power, volume, mute, inputs, play/pause |
+
+- Device descriptions are only fetched from the device that answered the search, never from another address it names.
+- The plugin writes no files of its own. Device names, IP addresses and serial numbers are kept only in your Homebridge configuration and the local Homebridge log.
+- The runtime dependencies (`@xmldom/xmldom`, `async-mutex`, `date-fns`) have no network access.
+- Only Homebridge itself and the Homebridge UI go online (e.g. to check npm for plugin updates); the plugin doesn't.
 
 ## Development
 

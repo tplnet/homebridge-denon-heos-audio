@@ -28,26 +28,36 @@ export const CLIENT_MAP: Record<
   [ControlMode.HYBRID]: DenonClientHybrid,
 };
 
+const PROTOCOL_NAMES: Partial<Record<number, string>> = {
+  [ControlMode.AVRCONTROL]: "AVR Control",
+  [ControlMode.HEOSCLI]: "HEOS CLI",
+};
+
+export function describeProbeResult(host: string, port: number, supported: boolean, reason?: string): string {
+  const protocol = `${PROTOCOL_NAMES[port] ?? "Protocol"} (port ${port})`;
+  return supported ? `${host}: ${protocol} available` : `${host}: ${protocol} not available${reason ? ` (${reason})` : ""}`;
+}
+
 function checkProtocolSupportAtPort(host: string, port: number, debugLogCallback?: (message: string, ...parameters: any[]) => void): Promise<boolean> {
   const CONNECT_TIMEOUT = 5000;
 
   return new Promise((resolve) => {
     let settled = false;
-    const finish = (supported: boolean, ...logParameters: any[]) => {
+    const finish = (supported: boolean, reason?: string) => {
       if (settled) {
         return;
       }
       settled = true;
       clearTimeout(timer);
-      debugLogCallback?.(logParameters[0], ...logParameters.slice(1));
+      debugLogCallback?.(describeProbeResult(host, port, supported, reason));
       socket.destroy();
       resolve(supported);
     };
 
-    const socket = net.createConnection({ host: host, port: port }, () => finish(true, "successfully connected to", host, port));
-    socket.on("error", (error) => finish(false, "error for", host, port, error.message));
+    const socket = net.createConnection({ host: host, port: port }, () => finish(true));
+    socket.on("error", (error: NodeJS.ErrnoException) => finish(false, error.code === "ECONNREFUSED" ? "connection refused" : (error.code ?? error.message)));
     // Hard upper bound for the connection attempt (covers devices that silently drop the SYN).
-    const timer = setTimeout(() => finish(false, "timeout for", host, port), CONNECT_TIMEOUT);
+    const timer = setTimeout(() => finish(false, "no answer within 5 s"), CONNECT_TIMEOUT);
   });
 }
 

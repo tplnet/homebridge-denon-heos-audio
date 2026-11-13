@@ -2,7 +2,7 @@
   "name": "@tplnet/homebridge-denon-heos-audio",
   "displayName": "Homebridge Denon & Marantz HEOS (tplnet)",
   "type": "module",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Denon and Marantz HEOS devices in Apple Home: Denon Home speakers, Home Amp and AV receivers (e.g. Marantz Cinema, Denon AVR). Power, volume, inputs, play/pause, automatic discovery.",
   "author": "tplnet",
   "contributors": [

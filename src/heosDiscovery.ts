@@ -82,6 +82,15 @@ export function parseDeviceDescription(xml: string): { serialNumber?: string; fr
  * - `device` (DiscoveredHeosDevice): a device was found (emitted once per description location)
  * - `error` (Error): a UDP socket failed; the discovery should be restarted
  */
+/**
+ * True if the location of an SSDP response is a plain HTTP URL on the device that sent the response.
+ * Prevents a manipulated response from making the plugin fetch an arbitrary (e.g. external) address.
+ */
+export function isLocationOfSender(url: URL, remoteAddress: string): boolean {
+  const sender = remoteAddress.replace(/^::ffff:/i, "");
+  return url.protocol === "http:" && url.hostname === sender && !url.username && !url.password;
+}
+
 export class HeosDiscovery extends EventEmitter {
   private readonly searchIntervalMs: number;
   private readonly fetchTimeoutMs: number;
@@ -207,7 +216,9 @@ export class HeosDiscovery extends EventEmitter {
       this.debugLog("Ignoring SSDP response with an invalid location:", location);
       return;
     }
-    if (url.protocol !== "http:") {
+    if (!isLocationOfSender(url, remoteAddress)) {
+      // Only the description of the device that answered is fetched, never another (e.g. external) address.
+      this.debugLog(`Ignoring SSDP response from ${remoteAddress}: its location ${location} points to another host.`);
       return;
     }
 
@@ -233,7 +244,7 @@ export class HeosDiscovery extends EventEmitter {
       this.debugLog(`Device description at ${url.href} has no serial number.`);
       return undefined;
     }
-    return { ...description, serialNumber: description.serialNumber, ip: url.hostname || remoteAddress, location: url.href };
+    return { ...description, serialNumber: description.serialNumber, ip: remoteAddress, location: url.href };
   }
 
   /**

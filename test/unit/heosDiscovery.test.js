@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import dgram from "node:dgram";
 import http from "node:http";
 
-import { HEOS_SEARCH_TARGET, HeosDiscovery, parseDeviceDescription, parseSsdpMessage } from "../../dist/heosDiscovery.js";
+import { HEOS_SEARCH_TARGET, HeosDiscovery, isLocationOfSender, parseDeviceDescription, parseSsdpMessage } from "../../dist/heosDiscovery.js";
 
 const DESCRIPTION = `<?xml version="1.0"?>
 <root xmlns="urn:schemas-upnp-org:device-1-0">
@@ -117,6 +117,19 @@ describe("HeosDiscovery", () => {
     assert.equal(requests, 1, "the description is fetched only once");
   });
 
+  it("ignores responses whose location points to another host", async () => {
+    requests = 0;
+    respondWith = () => [response("/desc.xml").replace("http://127.0.0.1:", "http://127.0.0.2:")];
+    const discovery = createDiscovery();
+    const found = [];
+    discovery.on("device", (device) => found.push(device));
+    await discovery.start();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    discovery.stop();
+    assert.equal(found.length, 0);
+    assert.equal(requests, 0, "nothing is fetched");
+  });
+
   it("ignores responses of other device types", async () => {
     requests = 0;
     respondWith = () => [response("/desc.xml", "urn:schemas-upnp-org:device:InternetGatewayDevice:1")];
@@ -145,5 +158,17 @@ describe("HeosDiscovery", () => {
     assert.equal(found.length, 0);
     assert.ok(requests >= 4, `failed descriptions are fetched again with the next search (${requests})`);
     assert.equal(openConnections, 0, "all connections are closed");
+  });
+});
+
+describe("isLocationOfSender", () => {
+  it("accepts HTTP locations on the sender only", () => {
+    assert.equal(isLocationOfSender(new URL("http://192.0.2.10:60006/desc.xml"), "192.0.2.10"), true);
+    assert.equal(isLocationOfSender(new URL("http://192.0.2.10:60006/desc.xml"), "::ffff:192.0.2.10"), true);
+    assert.equal(isLocationOfSender(new URL("http://192.0.2.11:60006/desc.xml"), "192.0.2.10"), false);
+    assert.equal(isLocationOfSender(new URL("http://example.com/desc.xml"), "192.0.2.10"), false);
+    assert.equal(isLocationOfSender(new URL("https://192.0.2.10/desc.xml"), "192.0.2.10"), false);
+    assert.equal(isLocationOfSender(new URL("file:///etc/passwd"), "192.0.2.10"), false);
+    assert.equal(isLocationOfSender(new URL("http://user:pw@192.0.2.10/desc.xml"), "192.0.2.10"), false);
   });
 });

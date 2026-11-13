@@ -2,6 +2,21 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.5
+
+### Fixed
+
+- The speaker part (volume, mute) is now linked to the TV, as Apple recommends for TV accessories. The Home app no longer shows it as a separate speaker tile. If an existing speaker tile remains, restart Homebridge; if it is still there, remove it in the Home app (the TV tile keeps working).
+
+### Security
+
+- Automatic discovery only fetches the device description from the device that answered the search. A manipulated answer can no longer make the plugin fetch another (e.g. external) address.
+
+### Changed
+
+- New README section "Privacy": the plugin collects no data and only talks to the HEOS devices in the local network.
+- Clearer debug messages for the protocol check, e.g. "AVR Control (port 23) not available (connection refused)" instead of "error for … ECONNREFUSED".
+
 ## 1.2.4
 
 ### Changed
