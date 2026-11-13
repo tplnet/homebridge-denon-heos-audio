@@ -46,6 +46,35 @@ describe("power state after switching", () => {
     assert.equal(await handler.getActive(), true);
   });
 
+  it("reports the requested state while switching is still in progress", async () => {
+    const { handler } = createAccessory();
+    handler.denonClient.getPower = async () => false; // device: still stopped
+    let finish;
+    handler.denonClient.setPower = () => new Promise((resolve) => (finish = resolve));
+
+    const switching = handler.setActive(hap.Characteristic.Active.ACTIVE);
+    assert.equal(await handler.getActive(), true, "requested state while switching");
+
+    // intermediate state reported by the device while the favorite is being started
+    handler.callbackActive(false);
+    assert.equal(await handler.getActive(), true, "intermediate state is ignored");
+    assert.equal(handler.tvService.getCharacteristic(hap.Characteristic.Active).value, hap.Characteristic.Active.INACTIVE);
+
+    finish(true);
+    await switching;
+    assert.equal(await handler.getActive(), true);
+  });
+
+  it("returns to the device state if switching fails", async () => {
+    const { handler } = createAccessory();
+    handler.denonClient.getPower = async () => false;
+    handler.denonClient.setPower = async () => {
+      throw new Error("refused");
+    };
+    await assert.rejects(handler.setActive(hap.Characteristic.Active.ACTIVE));
+    assert.equal(await handler.getActive(), false);
+  });
+
   it("rejects an invalid power on favorite", () => {
     const platform = { api: { hap }, Service: hap.Service, Characteristic: hap.Characteristic };
     const accessory = new hap.Accessory("X", hap.uuid.generate("x"));

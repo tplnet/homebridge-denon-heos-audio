@@ -329,7 +329,17 @@ export class DenonClientHeosCli extends DenonClient {
     });
   }
 
-  private async findPlayerId() {
+  private playerIdLookup: Promise<void> | undefined;
+
+  /** Looks up the player id; concurrent calls share one request. */
+  private findPlayerId(): Promise<void> {
+    this.playerIdLookup ??= this.findPlayerIdUncached().finally(() => {
+      this.playerIdLookup = undefined;
+    });
+    return this.playerIdLookup;
+  }
+
+  private async findPlayerIdUncached() {
     const payload_str = await super.sendCommand(DenonClientHeosCli.PROTOCOL.PLAYERS, CommandMode.GET, { passPayload: true });
     const payload = JSON.parse(payload_str);
     if (!Array.isArray(payload)) {

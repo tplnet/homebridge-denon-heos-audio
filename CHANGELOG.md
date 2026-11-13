@@ -2,6 +2,13 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.1
+
+### Fixed
+
+- When switching on took a few seconds (e.g. while the power on favorite was being started), the tile briefly showed "off" before it switched to "on". The requested state is now reported from the moment of the tap, and intermediate states of the device are ignored until switching has finished.
+- The player list was requested twice per device at startup.
+
 ## 1.2.0
 
 ### New

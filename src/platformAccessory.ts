@@ -55,6 +55,7 @@ export class DenonAudioAccessory {
 
   private volumeChangeOngoing = false;
   private pendingActive: { value: boolean; until: number } | undefined;
+  private powerChangeInProgress = false;
   private playingChangeOngoing = false;
 
   constructor(platform: DenonAudioPlatform, accessory: PlatformAccessory, config: DeviceConfig, log: Logger) {
@@ -372,6 +373,10 @@ export class DenonAudioAccessory {
   async setActive(newValue: CharacteristicValue) {
     this.log.debug(`setActive for ${this.name} set to ${newValue}`);
     const active = newValue === this.platform.Characteristic.Active.ACTIVE;
+    // Report the requested state right away: switching on can take a few seconds (e.g. when the power on favorite is
+    // started), and the device reports intermediate states during that time.
+    this.pendingActive = { value: active, until: Number.POSITIVE_INFINITY };
+    this.powerChangeInProgress = true;
     try {
       await this.denonClient.setPower(active);
       this.pendingActive = { value: active, until: Date.now() + DenonAudioAccessory.POWER_STATE_SETTLE_TIME };
@@ -379,6 +384,8 @@ export class DenonAudioAccessory {
       this.pendingActive = undefined;
       this.log.error(`An error occured while setting power status for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    } finally {
+      this.powerChangeInProgress = false;
     }
   }
 
@@ -605,6 +612,10 @@ export class DenonAudioAccessory {
    * Handles characteristic updates from the API
    */
   private callbackActive(active: boolean) {
+    if (this.powerChangeInProgress && this.pendingActive && this.pendingActive.value !== active) {
+      this.log.debug(`Ignoring intermediate power state ${active} of ${this.name} while switching.`);
+      return;
+    }
     if (this.pendingActive && this.pendingActive.value !== active) {
       // changed on the device (e.g. in the HEOS app) - the device state wins
       this.pendingActive = undefined;

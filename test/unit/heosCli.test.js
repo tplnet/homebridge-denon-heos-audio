@@ -128,6 +128,19 @@ describe("DenonClientHeosCli response handling", () => {
     );
   });
 
+  it("looks up the player id only once for concurrent requests", async () => {
+    written = [];
+    client.socket = { write: (data) => written.push(data) };
+    client.player_id = undefined;
+    const first = client.findPlayerId();
+    const second = client.findPlayerId();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(written.filter((data) => data.includes("player/get_players")).length, 1);
+    receive(heos({ heos: { command: "player/get_players", result: "success", message: "" }, payload: [{ pid: PID, serial: "SERIAL", name: "Test" }] }));
+    await Promise.all([first, second]);
+    assert.equal(client.player_id, PID);
+  });
+
   it("ignores responses for other players", async () => {
     attachFakeSocket();
     const pending = client.sendUnchecked(`player/get_mute?pid=${PID}`, "player/get_mute", /state=(\w+)/);
