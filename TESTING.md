@@ -57,8 +57,9 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 
 | Check | Home 150 | Home 250 | Home Amp | Cinema 60 |
 | --- | :-: | :-: | :-: | :-: |
-| Switch on with nothing to resume (e.g. after a restart of the speaker): first HEOS favorite starts | ☐ | ☐ | – | – |
-| Tile doesn't jump back after switching on / off | ☐ | ☐ | ☐ | ☐ |
+| Switch on with nothing to resume (e.g. ended Spotify session): first HEOS favorite starts | ✅ | ☐ | ✅ | – |
+| Switch on resumes a radio station that needs a few seconds to buffer (no favorite) | ✅ | ✅ | ☐ | – |
+| Tile doesn't jump back after switching on / off (1.2.2) | ✅ | ✅ | ☐ | ☐ |
 | Power on / off from the Home app | ✅ (Office, Kids Room; resumes Spotify) | ☐ | ☐ | ✅ |
 | Power state updates when changed on the device / in the HEOS app | ☐ | ☐ | ☐ | ☐ |
 | Volume slider sets the volume | ☐ | ☐ | ☐ | ☐ |
