@@ -1,4 +1,4 @@
-# Homebridge Denon Heos Audio (tplnet)
+# Homebridge Denon & Marantz HEOS (tplnet)
 
 [![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
 [![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)

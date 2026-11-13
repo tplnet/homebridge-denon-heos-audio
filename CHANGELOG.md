@@ -2,6 +2,17 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.3
+
+### Changed
+
+- Easier to find in the plugin search of the Homebridge UI: new display name *Homebridge Denon & Marantz HEOS (tplnet)*, a description that names the supported devices and features, and more keywords (Denon Home, Home Amp, Marantz Cinema, AV receiver, amplifier, soundbar, Apple Home).
+- Documentation: *Apple Home* instead of *HomeKit*; *Compatibility and security* section and badges; troubleshooting for devices that appear offline in the Homebridge UI.
+
+### Security / CI
+
+- Weekly *Compatibility & CVE check* with homebridge@latest and @beta on Node.js 22, 24 and 26, Dependabot for dependency updates.
+
 ## 1.2.2
 
 ### Fixed

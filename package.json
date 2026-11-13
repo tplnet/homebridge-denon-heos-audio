@@ -1,9 +1,9 @@
 {
   "name": "@tplnet/homebridge-denon-heos-audio",
-  "displayName": "Homebridge Denon Heos Audio (tplnet)",
+  "displayName": "Homebridge Denon & Marantz HEOS (tplnet)",
   "type": "module",
   "version": "1.2.2",
-  "description": "Control your Denon and Marantz HEOS speakers, amplifiers and AVRs via AVR Control and/or HEOS CLI",
+  "description": "Denon and Marantz HEOS devices in Apple Home: Denon Home speakers, Home Amp and AV receivers (e.g. Marantz Cinema, Denon AVR). Power, volume, inputs, play/pause, automatic discovery. Maintained fork of hov3rcraft/homebridge-denon-heos-audio.",
   "author": "tplnet",
   "contributors": [
     "hov3rcraft (original author, https://github.com/hov3rcraft)"
@@ -22,14 +22,24 @@
     "provenance": true
   },
   "keywords": [
-    "homebridge",
     "homebridge-plugin",
+    "homebridge",
     "denon",
     "marantz",
     "heos",
+    "denon-home",
+    "home-amp",
+    "marantz-cinema",
     "avr",
+    "av-receiver",
+    "receiver",
+    "amplifier",
     "speaker",
+    "soundbar",
     "ceol",
+    "apple-home",
+    "homekit",
+    "tv",
     "avrcontrol",
     "heoscli",
     "heos-cli"
