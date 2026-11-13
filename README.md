@@ -58,7 +58,7 @@ Not sure what your device supports? Turn on [device discovery](#1-find-your-devi
 **Why does "power" mean "playback" with HEOS CLI?** HEOS speakers have no real standby command. The plugin therefore treats "playing" as on and "stopped/paused" as off.
 Switching on resumes the last source. If there is nothing to resume (e.g. after the speaker was restarted or a streaming session ended), or playback doesn't start within 8 seconds, the first HEOS favorite is started, so switching on also works in scenes and automations. You can choose another favorite or turn this off with `powerOnFavorite`.
 
-> **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station). Without a favorite, a speaker that has nothing to resume can't be switched on from HomeKit.
+> **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station). Without a favorite, a speaker that has nothing to resume can't be switched on from Apple Home.
 
 **Hybrid** uses AVR Control for power and HEOS CLI for everything else. Pick it whenever discovery reports both protocols and you want real standby.
 
@@ -181,7 +181,7 @@ See the next section.
 
 ## Adding a device to Apple Home (step by step)
 
-HomeKit allows only one TV per bridge. That's why every device is published as its **own accessory**. It does **not** appear in the Home app automatically together with your other Homebridge accessories, so you have to add each device once.
+Apple Home allows only one TV per bridge. That's why every device is published as its **own accessory**. It does **not** appear in the Home app automatically together with your other Homebridge accessories, so you have to add each device once.
 
 **Before you start**
 
@@ -313,7 +313,7 @@ then restart Homebridge **once** and reload the page.
 **Homebridge doesn't start: `EADDRINUSE: address already in use`.**
 Usually an old Homebridge process is still running (e.g. after several restarts in a row): `ps aux | grep -i [h]omebridge` shows two main `homebridge` processes. Stop Homebridge, end the old process (`kill <pid>`) and start Homebridge again.
 
-**A device is added automatically although I don't want it in HomeKit.**
+**A device is added automatically although I don't want it in Apple Home.**
 Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then remove it from the Home app.
 
 **Getting more details:** enable debug logging for Homebridge (or `consoleLogEnabled`) and include the log when [opening an issue](https://github.com/tplnet/homebridge-denon-heos-audio/issues).

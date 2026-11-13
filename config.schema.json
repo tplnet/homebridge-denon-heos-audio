@@ -81,7 +81,7 @@
             },
             "volumeLimitEnabled": {
               "title": "Volume Limit",
-              "description": "When you set a volume limit, 100% volume in HomeKit will correspond to this percentage on your device.",
+              "description": "When you set a volume limit, 100% volume in the Home app will correspond to this percentage on your device.",
               "type": "boolean",
               "required": false,
               "default": false
@@ -216,7 +216,7 @@
                   },
                   "showInList": {
                     "title": "Show in Input List",
-                    "description": "If disabled, this input will not be shown in the list of selectable inputs in HomeKit.",
+                    "description": "If disabled, this input will not be shown in the list of selectable inputs in the Home app.",
                     "type": "boolean",
                     "required": false,
                     "default": true
