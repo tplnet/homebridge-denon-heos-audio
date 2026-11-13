@@ -31,7 +31,7 @@ Versions with a suffix (e.g. `1.1.0-beta.1`) are staged with the npm tag `next` 
 
 1. The first version was published manually (`npm login`, `npm publish`), because npm only allows Trusted Publishing for an existing package.
 2. **npmjs.com** → package → **Settings** → **Trusted Publisher** → **GitHub Actions**, same as for homebridge-tahoma:
-   user `tplnet`, repository `homebridge-denon-heos-audio`, workflow `publish.yml`, environment `npm`, permission **stage only**.
+   user `tplnet`, repository `homebridge-denon-heos-audio`, workflow `publish.yml`, environment **empty**, permission **stage only**.
 3. **Publishing access**: *Require two-factor authentication and disallow tokens*.
 
-No npm token is stored in GitHub. The GitHub environment `npm` is created automatically on the first run.
+No npm token is stored in GitHub and no GitHub environment is needed: the approval on npm with 2FA / passkey is the release gate.
