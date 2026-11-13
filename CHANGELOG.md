@@ -2,6 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.0.1
+
+### Changed
+
+- Releases are now published to npm by GitHub Actions with npm Trusted Publishing and provenance: every version on npm can be traced back to the GitHub commit it was built from. Before publishing, the workflow checks for known vulnerabilities (`npm audit`) and runs the tests and a compatibility test with the latest Homebridge release.
+- Documentation of the release process ([RELEASING.md](RELEASING.md)).
+
+No changes to the plugin itself.
+
 ## 1.0.0
 
 First release of the fork as `@tplnet/homebridge-denon-heos-audio`.
