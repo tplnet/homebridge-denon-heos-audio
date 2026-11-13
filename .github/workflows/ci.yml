@@ -4,6 +4,7 @@ name: CI
 # newly published vulnerabilities (CVEs) are noticed even without code changes.
 on:
   push:
+    branches: [main] # version tags are tested by the publish workflow
   pull_request:
   schedule:
     - cron: "17 4 * * 1" # Mondays 04:17 UTC

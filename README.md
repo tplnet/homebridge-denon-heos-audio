@@ -10,7 +10,7 @@ Each device appears in the Home app as a TV accessory, so you can:
 - play, pause and skip tracks with the Remote in Control Center
 
 [![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
-[![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)
+[![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)
 
 > This is a fork of [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) with stability fixes
 > (no more Homebridge crashes on unexpected device messages), automatic setup of discovered devices, inputs read from the device,
