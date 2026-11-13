@@ -6,6 +6,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import type { DeviceConfig } from "./config.js";
 import { buildDiscoveredDeviceConfig } from "./discovery.js";
+import { checkControlProtocol } from "./protocolCheck.js";
 import { DiscoveredHeosDevice, HeosDiscovery } from "./heosDiscovery.js";
 
 const MINUTE = 60 * 1000;
@@ -98,9 +99,9 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
           this.log.info("Restoring existing accessory from cache:", existingAccessory.displayName);
 
           // create the accessory handler for the restored accessory
-          this.createAccessoryHandler(existingAccessory, deviceConfig)
-            ?.setupInputs()
-            .catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error));
+          this.withCheckedProtocol(deviceConfig)
+            .then((checkedConfig) => this.createAccessoryHandler(existingAccessory, checkedConfig)?.setupInputs())
+            .catch((error) => this.log.error(`Could not set up '${deviceConfig.name}':`, error));
 
           // after it has been restored, the existing accessory should be removed form the uuid list
           existingAccessoriesUuids = existingAccessoriesUuids.filter((uuid) => uuid !== existingAccessory.UUID);
@@ -143,18 +144,39 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
    * Sets up a new accessory and publishes it as external accessory
    * (HomeKit only allows one television accessory per bridge).
    */
-  private publishNewAccessory(deviceConfig: DeviceConfig, accessory: PlatformAccessory) {
+  private publishNewAccessory(deviceConfig: DeviceConfig, accessory: PlatformAccessory, supportedModes?: DenonProtocol.ControlMode[]) {
     // store a copy of the device object in the `accessory.context`
     accessory.context.device = deviceConfig;
-    const handler = this.createAccessoryHandler(accessory, deviceConfig);
-    if (!handler) {
-      return;
+    this.withCheckedProtocol(deviceConfig, supportedModes)
+      .then(async (checkedConfig) => {
+        const handler = this.createAccessoryHandler(accessory, checkedConfig);
+        if (!handler) {
+          return;
+        }
+        // the inputs are read from the device first, as the services of a published accessory should not change anymore
+        await handler.setupInputs().catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error));
+        this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
+      })
+      .catch((error) => this.log.error(`Could not set up '${deviceConfig.name}':`, error));
+  }
+
+  /**
+   * Checks the configured control protocol against the protocols the device supports and falls back to a supported
+   * one if necessary (with a warning). If the device can't be reached, the configuration is used unchanged.
+   */
+  private async withCheckedProtocol(deviceConfig: DeviceConfig, knownSupportedModes?: DenonProtocol.ControlMode[]): Promise<DeviceConfig> {
+    const supportedModes = knownSupportedModes ?? (await DenonProtocol.checkProtocolSupport(deviceConfig.ip, this.log.debug.bind(this.log)));
+    const result = checkControlProtocol(deviceConfig.name, deviceConfig.controlProtocol, supportedModes);
+    if (result.warning) {
+      this.log.warn(result.warning);
     }
-    // the inputs are read from the device first, as the services of a published accessory should not change anymore
-    handler
-      .setupInputs()
-      .catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error))
-      .finally(() => this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]));
+    if (result.hint) {
+      this.log.info(result.hint);
+    }
+    if (supportedModes.length === 0) {
+      this.log.debug(`Could not check the protocols of '${deviceConfig.name}' (${deviceConfig.ip} not reachable). Using the configuration.`);
+    }
+    return result.protocol === deviceConfig.controlProtocol ? deviceConfig : { ...deviceConfig, controlProtocol: result.protocol };
   }
 
   /**
@@ -177,7 +199,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
     this.activeSerialNumbers.add(serialNumber);
     this.log.info(`Automatically adding discovered device '${deviceConfig.name}' (${deviceConfig.controlProtocol}, ${ip}).`);
-    this.publishNewAccessory(deviceConfig, new this.api.platformAccessory(deviceConfig.name, this.api.hap.uuid.generate(serialNumber)));
+    this.publishNewAccessory(deviceConfig, new this.api.platformAccessory(deviceConfig.name, this.api.hap.uuid.generate(serialNumber)), supportedModes);
   }
 
   /**

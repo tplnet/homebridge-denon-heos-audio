@@ -2,6 +2,17 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.0
+
+### New
+
+- **Control protocol check at startup:** the plugin checks which protocols a device supports. If the configured protocol isn't supported (e.g. *Hybrid* or *AVR Control* on a Denon Home speaker), it uses a supported one and logs a warning with what to change, instead of the device showing "No Response". A device configured with *HEOS CLI* that also supports AVR Control gets a hint that *Hybrid* is possible. Devices that are switched off at startup keep their configuration.
+- The plugin settings explain which devices support which protocol.
+
+### Changed
+
+- The protocol support of a device is checked on both ports in parallel (faster startup if a device is offline).
+
 ## 1.1.2
 
 ### Fixed

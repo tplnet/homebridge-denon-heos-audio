@@ -60,7 +60,11 @@ Switching on resumes the last source. If there is nothing to resume (e.g. after 
 
 > **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station). Without a favorite, a speaker that has nothing to resume can't be switched on from HomeKit.
 
-**Hybrid** uses AVR Control for power and HEOS CLI for everything else. Pick it whenever discovery reports both protocols.
+**Hybrid** uses AVR Control for power and HEOS CLI for everything else. Pick it whenever discovery reports both protocols and you want real standby.
+
+**Wrong protocol?** At startup the plugin checks which protocols the device supports. If the configured one isn't supported (e.g. *Hybrid* on a Denon Home 150), it uses a supported one instead and logs a warning:
+`"Office Speaker" doesn't support AVR Control (port 23 closed), so "Hybrid" can't be used. Using "HEOS CLI" instead – please change "Control Protocol" in the plugin settings.`
+If a device configured with *HEOS CLI* also supports AVR Control, the log mentions that *Hybrid* is possible. If the device is switched off at startup, the configuration is used unchanged.
 
 ## Installation
 

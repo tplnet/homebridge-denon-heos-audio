@@ -52,14 +52,8 @@ function checkProtocolSupportAtPort(host: string, port: number, debugLogCallback
 }
 
 export async function checkProtocolSupport(host: string, debugLogCallback?: (message: string, ...parameters: any[]) => void): Promise<ControlMode[]> {
-  const supportedProtocols = [];
-  for (const controlMode of Object.values(ControlMode).filter((value) => typeof value === "number")) {
-    if (controlMode >= 0) {
-      const supported = await checkProtocolSupportAtPort(host, controlMode, debugLogCallback);
-      if (supported) {
-        supportedProtocols.push(controlMode);
-      }
-    }
-  }
-  return supportedProtocols;
+  const modes = Object.values(ControlMode).filter((value): value is ControlMode => typeof value === "number" && value >= 0);
+  // check all ports in parallel, so an unreachable device delays the startup only once
+  const results = await Promise.all(modes.map((mode) => checkProtocolSupportAtPort(host, mode, debugLogCallback)));
+  return modes.filter((_mode, index) => results[index]);
 }

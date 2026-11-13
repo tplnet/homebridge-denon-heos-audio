@@ -61,6 +61,7 @@
             },
             "controlProtocol": {
               "title": "Control Protocol",
+              "description": "HEOS CLI: speakers like the Denon Home series (on/off = play/stop). Hybrid: devices that also support AVR Control, e.g. AV receivers and the Denon Home Amp (real standby). AVR Control: receivers without HEOS. Device discovery lists the supported protocols in the log; an unsupported protocol is replaced automatically at startup (with a warning).",
               "type": "string",
               "oneOf": [
                 {
