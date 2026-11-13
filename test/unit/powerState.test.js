@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import * as hap from "@homebridge/hap-nodejs";
+// HAP-NodeJS is "@homebridge/hap-nodejs" in Homebridge 2.x and "hap-nodejs" in Homebridge 1.x
+const hap = await import("@homebridge/hap-nodejs").catch(() => import("hap-nodejs"));
 
 import { DenonAudioAccessory } from "../../dist/platformAccessory.js";
 
