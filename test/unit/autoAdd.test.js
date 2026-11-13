@@ -55,7 +55,7 @@ describe("auto-adding discovered devices", () => {
   });
 
   it("skips excluded devices (case-insensitive)", () => {
-    const { platform, published } = createPlatform({ autoAddDiscoveredDevices: true, excludedSerialNumbers: ["BLT00000000002 "] });
+    const { platform, published } = createPlatform({ autoAddDiscoveredDevices: true, excludedSerialNumbers: ["blt00000000002 "] });
     platform.autoAddDiscoveredDevice("BLT00000000002", "192.168.1.111", "Kids Room Speaker", "Denon Home 150", HEOS);
     assert.equal(published.length, 0);
   });

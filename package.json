@@ -2,13 +2,13 @@
   "name": "@tplnet/homebridge-denon-heos-audio",
   "displayName": "Homebridge Denon Heos Audio (tplnet)",
   "type": "module",
-  "version": "1.0.0-beta.1-tplnet.7",
+  "version": "1.0.0",
   "description": "Control your Denon and Marantz HEOS speakers, amplifiers and AVRs via AVR Control and/or HEOS CLI",
   "author": "tplnet",
   "contributors": [
     "hov3rcraft (original author, https://github.com/hov3rcraft)"
   ],
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "homepage": "https://github.com/tplnet/homebridge-denon-heos-audio#readme",
   "repository": {
     "type": "git",
@@ -16,6 +16,9 @@
   },
   "bugs": {
     "url": "https://github.com/tplnet/homebridge-denon-heos-audio/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "homebridge",
@@ -31,6 +34,14 @@
     "heos-cli"
   ],
   "main": "dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "config.schema.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": "^22.12.0 || ^24.0.0 || ^26.0.0",
     "homebridge": "^1.8.0 || ^2.1.0"
@@ -42,7 +53,7 @@
     "test": "npm run build && node --test \"test/unit/**/*.test.js\"",
     "smoke": "npm run build && node scripts/smoke-test.mjs",
     "check": "npm audit && npm run lint && npm test && node scripts/smoke-test.mjs",
-    "prepublishOnly": "npm run lint && npm run build",
+    "prepublishOnly": "npm run lint && npm test",
     "watch": "npm run build && npm link && nodemon"
   },
   "devDependencies": {

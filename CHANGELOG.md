@@ -1,0 +1,40 @@
+# Changelog
+
+All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
+
+## 1.0.0
+
+First release of the fork as `@tplnet/homebridge-denon-heos-audio`.
+Tested with Denon Home 150, Denon Home 250, Denon Home Amp and Marantz Cinema 60 on Homebridge 2.5.0 (and 1.11.4 in automated tests).
+
+### New
+
+- **Automatic setup:** discovered devices can be added automatically (`autoAddDiscoveredDevices`), with their HEOS name and the best control protocol (Hybrid if supported). Manually configured devices are not affected; single devices can be excluded (`excludedSerialNumbers`).
+- **Inputs read from the device:** with HEOS CLI and Hybrid, the plugin asks the device for its inputs and shows exactly those, with the names set on the device. Before, every device got about 66 input entries.
+- **Marantz support** in device discovery.
+- New device discovery that only asks for HEOS devices, searches every 2 minutes and restarts itself after network errors.
+- Step-by-step guide for adding a device to Apple Home, troubleshooting and a manual test checklist ([TESTING.md](TESTING.md)).
+
+### Fixed
+
+- Homebridge could crash on unexpected or malformed messages from a device (unhandled errors / promise rejections).
+- Devices with a **negative HEOS player id** (common, e.g. `pid=-1234567890`) did not react at all: all their responses were discarded.
+- The HEOS play state `unknown` (device without active source) was treated as an error, so the power state was shown wrongly.
+- Failed HEOS commands were not recognised (`result` field) and always ran into the timeout.
+- Device discovery stopped forever after the first error of any UPnP device in the network; it could also exhaust the open files of the process (`EMFILE`).
+- Volume limit 0 was ignored; `setVolume` errors were not reported; the play/pause lock could stay set forever.
+- The plugin configuration form in the Homebridge UI could stick to the mouse pointer after using a dropdown.
+- Timers and sockets were not cleaned up; circular module imports.
+
+### Changed
+
+- Package name `@tplnet/homebridge-denon-heos-audio` (the platform name `DenonHeosAudio` and existing configurations are unchanged).
+- Requires Node.js 22.12+, 24 or 26 (like Homebridge 2.5).
+- Removed the generic SSDP library; fewer dependencies.
+- Discontinued streaming services (Rhapsody, Rdio, MoodMix, Juke) removed.
+- License stated as GPL-3.0 in `package.json`, matching the `LICENSE` file of the original project.
+
+### Security
+
+- All dependencies updated; `npm audit`: 0 known vulnerabilities.
+- CI checks vulnerabilities (CVEs) and compatibility with the latest Homebridge on every push and weekly.
