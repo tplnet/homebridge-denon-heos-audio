@@ -33,6 +33,10 @@ jobs:
       matrix:
         node: [22, 24, 26]
         homebridge: ["devDependency", "latest", "1"]
+        exclude:
+          # Homebridge 1.x supports Node.js up to 24; on Node 26 npm would fall back to a very old 1.x release
+          - node: 26
+            homebridge: "1"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -49,7 +53,7 @@ jobs:
         run: node scripts/smoke-test.mjs
       - name: Upload smoke test log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-test-node${{ matrix.node }}-hb${{ matrix.homebridge }}
           path: smoke-test.log
