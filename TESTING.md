@@ -15,7 +15,7 @@ npm install --no-save homebridge@latest && npm run smoke
 npm install                          # back to the pinned version
 ```
 
-The GitHub workflow runs the same checks on every push and weekly (Node 22/24, Homebridge 1.x and latest).
+GitHub runs these checks automatically: CI on every push (Node 22/24/26, Homebridge 1.x, pinned and latest) and the *Compatibility & CVE check* weekly and on dependency changes (homebridge@latest and @beta).
 
 ## Manual tests with real devices
 

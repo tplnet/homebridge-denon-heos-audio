@@ -1,0 +1,59 @@
+name: Compatibility & CVE check
+# Runs every Monday, on dependency changes and on demand (Actions > Compatibility & CVE check > Run workflow).
+# 1. CVE: `npm audit` – fails on any known vulnerability in the runtime dependencies.
+# 2. Homebridge: builds the plugin and starts it with the newest Homebridge release (and the beta)
+#    on all supported Node.js versions, with simulated HEOS / AVR Control devices (scripts/smoke-test.mjs).
+# GitHub notifies the repository owner by e-mail when a scheduled run fails.
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json', '.github/workflows/compat.yml', 'scripts/smoke-test.mjs']
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: CVE check (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Runtime dependencies (fails on any vulnerability)
+        run: npm audit --omit=dev --audit-level=low
+      - name: All dependencies incl. dev tools
+        run: npm audit
+
+  homebridge:
+    name: Homebridge ${{ matrix.homebridge }} / Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.homebridge == 'beta' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        homebridge: [latest, beta]
+        node: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - name: Install homebridge@${{ matrix.homebridge }}
+        run: npm install --no-save homebridge@${{ matrix.homebridge }} && npx homebridge --version
+      - run: npm run build
+      - name: Start Homebridge with the plugin and simulated devices
+        run: node scripts/smoke-test.mjs
+      - name: Upload smoke test log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-test-hb${{ matrix.homebridge }}-node${{ matrix.node }}
+          path: smoke-test.log
+          if-no-files-found: ignore

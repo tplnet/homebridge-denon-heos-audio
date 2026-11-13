@@ -153,6 +153,7 @@ const checks = [
   ["inputs read from the device (negative player id)", output.includes("[Smoke HEOS] Inputs reported by the device: AUX In (aux_in_1)")],
   ["no HAP-NodeJS warnings", !output.includes("HAP-NodeJS WARNING")],
   ["no deprecation warnings", !/deprecat/i.test(output)],
+  ["accepted as compatible (engines)", !/does not satisfy|is not compatible|incompatible/i.test(output)],
   ["no uncaught errors", !/Uncaught|unhandledRejection|TypeError|ReferenceError/.test(output)],
 ];
 

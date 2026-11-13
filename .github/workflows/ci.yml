@@ -1,31 +1,15 @@
 name: CI
 
-# Runs on every push / pull request and weekly, so new Homebridge releases and
-# newly published vulnerabilities (CVEs) are noticed even without code changes.
+# Lint, unit tests and smoke test on every push to main and every pull request,
+# with the pinned Homebridge version, the latest release and Homebridge 1.x.
+# Weekly CVE and Homebridge checks: see compat.yml.
 on:
   push:
     branches: [main] # version tags are tested by the publish workflow
   pull_request:
-  schedule:
-    - cron: "17 4 * * 1" # Mondays 04:17 UTC
   workflow_dispatch:
 
 jobs:
-  audit:
-    name: Security audit (CVE)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: npm audit (all dependencies)
-        run: npm audit
-      - name: npm audit (runtime dependencies only)
-        run: npm audit --omit=dev
-
   test:
     name: Node ${{ matrix.node }} / Homebridge ${{ matrix.homebridge }}
     runs-on: ubuntu-latest

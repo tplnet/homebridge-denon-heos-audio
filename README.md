@@ -1,4 +1,11 @@
-# Homebridge Denon Heos Audio
+# Homebridge Denon Heos Audio (tplnet)
+
+[![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
+[![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)
+[![Compatibility & CVE check](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml/badge.svg)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml)
+[![License](https://img.shields.io/npm/l/@tplnet/homebridge-denon-heos-audio)](LICENSE)
+
+Package: [`@tplnet/homebridge-denon-heos-audio`](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
 
 Control your **Denon and Marantz HEOS speakers, amplifiers and AV receivers** from Apple Home.
 
@@ -8,9 +15,6 @@ Each device appears in the Home app as a TV accessory, so you can:
 - change the volume and mute it
 - pick an input (HDMI ARC, optical, AUX, …)
 - play, pause and skip tracks with the Remote in Control Center
-
-[![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
-[![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)
 
 > This is a fork of [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) with stability fixes
 > (no more Homebridge crashes on unexpected device messages), automatic setup of discovered devices, inputs read from the device,
@@ -320,23 +324,20 @@ Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then re
 
 ## Compatibility and security
 
-Every change is checked against the current Homebridge release and for known vulnerabilities (CVEs):
+This plugin is kept compatible with the **newest Homebridge release** and free of **known vulnerabilities (CVEs)**:
 
-| Checked | Versions |
-| --- | --- |
-| Homebridge | 1.11.4 and 2.5.0 (HAP-NodeJS 0.14.3 / 2.3.0) |
-| Node.js | 22, 24 and 26 (Homebridge 1.x: up to 24) |
-| Known vulnerabilities | `npm audit`: 0 findings (runtime and development dependencies) |
+- **Weekly and on every dependency change** the [Compatibility & CVE check](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml) workflow
+  - runs `npm audit` – any known vulnerability in the runtime dependencies fails the check,
+  - builds the plugin and starts it with **homebridge@latest** and **homebridge@beta** on Node.js 22, 24 and 26 with simulated HEOS and AVR Control devices (`npm run smoke`): the plugin must load, be accepted as compatible (`engines`), connect to the devices, read their inputs and run without errors, HAP warnings or deprecation warnings.
+- **On every push** the [CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml) workflow runs lint, the unit tests and the smoke test, also with **Homebridge 1.x** (on Node.js 22 and 24).
+- **Every release** runs the same CVE and Homebridge checks before the version is staged on npm – a release with a known vulnerability or an incompatibility is not published.
+- **Dependabot** opens weekly pull requests for dependency and GitHub Actions updates.
 
-*Last checked: November 2026.* The GitHub workflow repeats these checks on every push and **weekly**, so new Homebridge releases and newly published CVEs are noticed even without code changes.
+Requirements: Homebridge 1.8 or newer (2.x supported), Node.js 22.12+, 24 or 26.
 
-To run all checks locally:
+Run all checks locally with `npm run check` (`npm audit`, lint, unit tests, smoke test). To test another Homebridge version, install it temporarily with `npm install --no-save homebridge@<version>`.
 
-```bash
-npm run check   # npm audit + lint + unit tests + smoke test
-```
-
-The smoke test (`npm run smoke`) starts the installed Homebridge version with simulated HEOS and AVR Control devices and fails on errors, HAP warnings or deprecation warnings. To test another Homebridge version, install it temporarily with `npm install --no-save homebridge@<version>`.
+Found a security issue? Please report it privately via GitHub (*Security* → *Report a vulnerability*) instead of a public issue.
 
 ## Development
 
