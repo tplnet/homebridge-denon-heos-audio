@@ -58,6 +58,8 @@ Not sure what your device supports? Turn on [device discovery](#1-find-your-devi
 **Why does "power" mean "playback" with HEOS CLI?** HEOS speakers have no real standby command. The plugin therefore treats "playing" as on and "stopped/paused" as off.
 Switching on resumes the last source. If there is nothing to resume (e.g. after the speaker was restarted), the first HEOS favorite is started, so switching on also works in scenes and automations. You can choose another favorite or turn this off with `powerOnFavorite`.
 
+> **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station). Without a favorite, a speaker that has nothing to resume can't be switched on from HomeKit.
+
 **Hybrid** uses AVR Control for power and HEOS CLI for everything else. Pick it whenever discovery reports both protocols.
 
 ## Installation
@@ -226,7 +228,7 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 | `devices[].volumeLimitEnabled` | no | `false` | Enables the volume limit. |
 | `devices[].volumeLimit` | no | `99` | 0–99. With a limit, 100 % in the Home app equals this value on the device. |
 | `devices[].volumeStepSize` | no | `2` | 1–10. Volume change per press of the volume buttons in the Remote. |
-| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (1 = first favorite in the HEOS app, 0 = disabled). Also used for automatically added devices. |
+| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (1 = first favorite in the HEOS app, 0 = disabled). The favorite must exist in the HEOS app. Also used for automatically added devices. |
 | `devices[].inputs` | no | `[]` | Inputs to show in the Home app, see [Inputs](#inputs). |
 | `devices[].inputs[].inputID` | yes | | Input ID (depends on the protocol, see below). |
 | `devices[].inputs[].name` | yes | | Name shown in the Home app. |
