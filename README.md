@@ -10,7 +10,7 @@ Each device appears in the Home app as a TV accessory, so you can:
 - play, pause and skip tracks with the Remote in Control Center
 
 > This is a fork of [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) with stability fixes
-> (no more Homebridge crashes on unexpected device messages), Marantz support in device discovery and unit tests.
+> (no more Homebridge crashes on unexpected device messages), automatic setup of discovered devices, Marantz support and automated tests.
 > The plugin is still **beta**. Running it on a [child bridge](https://github.com/homebridge/homebridge/wiki/Child-Bridges) is recommended.
 
 ## Contents
@@ -18,11 +18,13 @@ Each device appears in the Home app as a TV accessory, so you can:
 - [Which devices work?](#which-devices-work)
 - [Choosing a control protocol](#choosing-a-control-protocol)
 - [Installation](#installation)
-- [Setup in 4 steps](#setup-in-4-steps)
+- [Setup](#setup)
+- [Adding a device to Apple Home (step by step)](#adding-a-device-to-apple-home-step-by-step)
 - [Configuration reference](#configuration-reference)
 - [Inputs](#inputs)
 - [Using it in the Home app](#using-it-in-the-home-app)
 - [Troubleshooting](#troubleshooting)
+- [Compatibility and security](#compatibility-and-security)
 - [Development](#development)
 
 ## Which devices work?
@@ -78,30 +80,56 @@ It is not on npm. Install it directly from GitHub or from a package file.
 
 To update later, run the same install command again and restart Homebridge.
 
-## Setup in 4 steps
+## Setup
 
-### 1. Find your device
+There are two ways to set up your devices. You can combine them.
 
-In the plugin settings, enable **Device Discovery** and restart Homebridge. After a few seconds the log shows something like:
+| | Automatic | Manual |
+| --- | --- | --- |
+| Effort | Switch on one option | One entry per device |
+| Name in the Home app | Name from the HEOS app | Your choice |
+| Control protocol | Chosen automatically (Hybrid if supported) | Your choice |
+| Inputs, volume limit, step size | Defaults (no input list) | Fully configurable |
+| Device must be on when Homebridge starts | Yes | No |
+
+**Rule of thumb:** use automatic setup for simple speakers and add AV receivers or amplifiers whose inputs you want to switch manually.
+Devices that you configure manually are **never** touched by the automatic setup, even if they are discovered.
+
+### Step 1: Find your devices
+
+In the plugin settings, enable **Device Discovery** and restart Homebridge. After a few seconds the log lists every device it finds:
 
 ```
 [Platform] Found Denon / Marantz device in local network:
-[Platform] Friendly name: Living Room
-[Platform] Model name:    Denon Home 250
-[Platform] Serial number: BME12345678901
-[Platform] IP address:    192.168.1.42
-[Platform] Supported modes: HEOSCLI
+[Platform] Friendly name: Patio Music
+[Platform] Model name:    Denon Home Amp
+[Platform] Serial number: DCPZ012345678
+[Platform] IP address:    192.168.1.149
+[Platform] Supported modes: AVRCONTROL, HEOSCLI
 ```
 
-Note the **serial number**, the **IP address** and the **supported modes**.
+> Make sure Homebridge's log level is at least *info*. Discovery uses SSDP/UPnP, so Homebridge and the devices must be in the same network (no VLAN or guest network separation). Some devices answer only after 30 seconds or more.
 
-> Make sure Homebridge's log level is at least *info*. Discovery uses SSDP/UPnP, so Homebridge and the device must be in the same network (no VLAN separation).
+### Step 2: Give the devices a fixed IP address
 
-### 2. Give the device a fixed IP address
+The plugin connects to the device's IP address. Reserve the address in your router so it doesn't change (on a FRITZ!Box: *Home Network → Network → device → "Always assign this network device the same IPv4 address"*).
+With automatic setup the current address is picked up at every Homebridge start; a reservation still avoids problems if the address changes while Homebridge is running.
 
-The plugin connects to the IP address you configure. Reserve that address for the device in your router (on a FRITZ!Box: *Home Network → Network → device → "Always assign this network device the same IPv4 address"*).
+### Step 3a: Automatic setup
 
-### 3. Add the device to the plugin configuration
+Enable **Add Discovered Devices Automatically** in the plugin settings (or set `"autoAddDiscoveredDevices": true`) and restart Homebridge. Each discovered device is added with:
+
+- the **name** from the HEOS app (e.g. *Patio Music*),
+- the **control protocol** `HYBRID` if the device supports both protocols, otherwise `HEOSCLI`,
+- default settings (volume step 2, no volume limit, no input list).
+
+The log confirms every device: `Automatically adding discovered device 'Patio Music' (HYBRID, 192.168.1.149).`
+
+To leave out a device, add its serial number to **Excluded Devices** (`excludedSerialNumbers`).
+
+> A device that is switched off or disconnected while Homebridge starts is not added until the next restart.
+
+### Step 3b: Manual setup
 
 Use the settings form in the Homebridge UI, or edit `config.json`:
 
@@ -109,17 +137,13 @@ Use the settings form in the Homebridge UI, or edit `config.json`:
 {
   "platform": "DenonHeosAudio",
   "deviceDiscovery": true,
+  "autoAddDiscoveredDevices": true,
+  "excludedSerialNumbers": ["BLT01234567890"],
   "devices": [
     {
-      "name": "Living Room",
-      "serialNumber": "BME12345678901",
-      "ip": "192.168.1.42",
-      "controlProtocol": "HEOSCLI"
-    },
-    {
       "name": "Cinema",
-      "serialNumber": "MZC12345678901",
-      "ip": "192.168.1.50",
+      "serialNumber": "MBZM012345678",
+      "ip": "192.168.1.146",
       "controlProtocol": "HYBRID",
       "volumeLimitEnabled": true,
       "volumeLimit": 70,
@@ -133,21 +157,62 @@ Use the settings form in the Homebridge UI, or edit `config.json`:
 }
 ```
 
-Restart Homebridge afterwards. Once everything is set up you can turn device discovery off again.
+In this example *Cinema* uses the manual configuration, all other discovered devices are added automatically, and the device with the serial number `BLT01234567890` is skipped.
 
-### 4. Add the accessory to the Home app
+Restart Homebridge afterwards.
 
-HomeKit allows only one TV per bridge, so every device is published as its **own accessory** and does **not** appear automatically:
+> **Switching a device from automatic to manual keeps it in the Home app.** The accessory is identified by the serial number, so you don't have to add it again.
 
-1. Home app → **+** → **Add Accessory** → **More options…**
-2. Select the device (e.g. *Living Room*).
-3. Enter the **Homebridge PIN** (shown in the Homebridge UI and in the log).
+### Step 4: Add the devices to the Home app
+
+See the next section.
+
+## Adding a device to Apple Home (step by step)
+
+HomeKit allows only one TV per bridge. That's why every device is published as its **own accessory**. It does **not** appear in the Home app automatically together with your other Homebridge accessories, so you have to add each device once.
+
+**Before you start**
+
+- Your iPhone or iPad is in the **same Wi-Fi network** as Homebridge.
+- Homebridge is running and the log shows a line like this for each device:
+  `Please add [Patio Music BF75] manually in Home app. Setup Code: 031-45-154`
+  The setup code is the **PIN of the bridge that runs the plugin** (the child bridge PIN, if you use a child bridge). You can also find it in the Homebridge UI.
+
+**Steps**
+
+1. Open the **Home** app.
+2. Tap **+** (top right) and choose **Add Accessory**.
+3. Tap **More options…** at the bottom. Don't scan a code, the QR code in the Homebridge UI belongs to the bridge, not to the speaker.
+4. Wait a moment until the device appears with a TV icon, e.g. *Patio Music BF75*. Tap it.
+5. The Home app says that the accessory is not certified. Tap **Add Anyway**. This is normal for Homebridge.
+6. Enter the **setup code** from the log, e.g. `031-45-154`.
+7. Choose the **room** and tap **Continue**.
+8. Keep or change the **name** and tap **Continue**.
+9. The Home app may ask about the TV inputs. Leave them as they are and tap **Continue**. You can rename or hide inputs later.
+10. Tap **Done**.
+
+Repeat these steps for every device. You only have to do it once per device. Updates of the plugin and Homebridge restarts keep the pairing.
+
+**Afterwards**
+
+- Long-press the tile to see power, volume (in the device settings) and inputs.
+- Use the **Remote** in Control Center to play/pause, skip tracks and change the volume with the iPhone's volume buttons. Select the device at the top of the Remote.
+- If you configured inputs, you can hide or rename them in the device settings under **Inputs**.
+
+**The device does not appear in step 4?**
+
+- Wait up to a minute and make sure the iPhone is in the same network.
+- Check the Homebridge log for the `Please add [...] manually in Home app` line. No line means the device was not set up (check the configuration and the log for errors).
+- On some systems (e.g. Synology NAS, Docker) the default network advertiser doesn't work reliably. In the Homebridge UI go to **Settings → mDNS Advertiser**, choose **Ciao** (or **Avahi**), restart and try again.
+- The device was paired before and removed from the Home app in the meantime: restart Homebridge and try again.
 
 ## Configuration reference
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
 | `deviceDiscovery` | no | `true` | Logs Denon / Marantz devices found in the network. |
+| `autoAddDiscoveredDevices` | no | `false` | Adds every discovered device automatically (see [automatic setup](#step-3a-automatic-setup)). Manually configured devices are not affected. |
+| `excludedSerialNumbers` | no | `[]` | Serial numbers of discovered devices that should not be added automatically. |
 | `devices[].name` | yes | | Name shown in the Home app. |
 | `devices[].serialNumber` | yes | | Serial number of the device (see discovery). |
 | `devices[].ip` | yes | | Fixed IPv4 address of the device. |
@@ -161,6 +226,8 @@ HomeKit allows only one TV per bridge, so every device is published as its **own
 | `devices[].inputs[].showInList` | no | `true` | Hide the input from the input list without removing it. |
 | `consoleLogEnabled` | no | `false` | Writes the plugin log directly to the console (debugging only). |
 | `consoleLogLevel` | no | `debug` | Log level for the console log. |
+
+`devices` lists the manually configured devices. Each serial number may only appear once.
 
 A misconfigured device (unknown protocol, invalid volume limit, …) is reported in the log and skipped. The other devices keep working.
 
@@ -204,7 +271,33 @@ SSDP doesn't cross VLANs or guest networks. Docker installations need `network_m
 **The Marantz receiver doesn't react to AVR Control commands.**
 Enable *Network Control* (sometimes called *IP Control*) in the receiver's network settings so it stays reachable in standby.
 
+**The device can't be added in the Home app.**
+See [The device does not appear in step 4?](#adding-a-device-to-apple-home-step-by-step)
+
+**A device is added automatically although I don't want it in HomeKit.**
+Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then remove it from the Home app.
+
 **Getting more details:** enable debug logging for Homebridge (or `consoleLogEnabled`) and include the log when [opening an issue](https://github.com/tplnet/homebridge-denon-heos-audio/issues).
+
+## Compatibility and security
+
+Every change is checked against the current Homebridge release and for known vulnerabilities (CVEs):
+
+| Checked | Versions |
+| --- | --- |
+| Homebridge | 1.11.4 and 2.5.0 (HAP-NodeJS 0.14.3 / 2.3.0) |
+| Node.js | 22, 24 (Homebridge 2.5 supports 22.12+, 24 and 26) |
+| Known vulnerabilities | `npm audit`: 0 findings (runtime and development dependencies) |
+
+*Last checked: November 2026.* The GitHub workflow repeats these checks on every push and **weekly**, so new Homebridge releases and newly published CVEs are noticed even without code changes.
+
+To run all checks locally:
+
+```bash
+npm run check   # npm audit + lint + unit tests + smoke test
+```
+
+The smoke test (`npm run smoke`) starts the installed Homebridge version with simulated HEOS and AVR Control devices and fails on errors, HAP warnings or deprecation warnings. To test another Homebridge version, install it temporarily with `npm install --no-save homebridge@<version>`.
 
 ## Development
 
@@ -214,6 +307,8 @@ cd homebridge-denon-heos-audio
 npm install          # also builds the plugin
 npm run lint
 npm test             # builds and runs the unit tests (no device needed)
+npm run smoke        # compatibility smoke test with simulated devices
+npm run check        # everything: audit, lint, tests, smoke test
 npm run watch        # starts a local Homebridge with test/hbConfig and rebuilds on change
 ```
 
