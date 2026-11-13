@@ -2,7 +2,7 @@
   "name": "@tplnet/homebridge-denon-heos-audio",
   "displayName": "Homebridge Denon Heos Audio (tplnet)",
   "type": "module",
-  "version": "1.0.0-beta.1-tplnet.1",
+  "version": "1.0.0-beta.1-tplnet.2",
   "description": "Control your Denon and Marantz HEOS speakers, amplifiers and AVRs via AVR Control and/or HEOS CLI",
   "author": "tplnet",
   "contributors": [
@@ -32,7 +32,7 @@
   ],
   "main": "dist/index.js",
   "engines": {
-    "node": "^20.18.0 || ^22.10.0 || ^24.0.0",
+    "node": "^22.12.0 || ^24.0.0 || ^26.0.0",
     "homebridge": "^1.8.0 || ^2.1.0"
   },
   "scripts": {
@@ -40,6 +40,8 @@
     "prepare": "npm run build",
     "lint": "eslint . --max-warnings=0",
     "test": "npm run build && node --test \"test/unit/**/*.test.js\"",
+    "smoke": "npm run build && node scripts/smoke-test.mjs",
+    "check": "npm audit && npm run lint && npm test && node scripts/smoke-test.mjs",
     "prepublishOnly": "npm run lint && npm run build",
     "watch": "npm run build && npm link && nodemon"
   },
@@ -48,7 +50,7 @@
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.8.6",
     "eslint": "^9.14.0",
-    "homebridge": "^2.1.0",
+    "homebridge": "^2.5.0",
     "nodemon": "^3.1.7",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
@@ -63,6 +65,9 @@
   },
   "overrides": {
     "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.8"
+    },
+    "nodemon": {
       "minimatch": "^11.0.8"
     }
   }

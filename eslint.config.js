@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 
 export default [
   { languageOptions: { globals: globals.browser } },
-  { files: ["test/**/*.js"], languageOptions: { globals: globals.node } },
+  { files: ["test/**/*.js", "scripts/**/*.mjs"], languageOptions: { globals: globals.node } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   {

@@ -133,3 +133,6 @@ dist
 
 # playground
 src/playground.ts
+
+# smoke test output
+smoke-test.log
