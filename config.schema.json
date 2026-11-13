@@ -24,6 +24,7 @@
         "title": "Excluded Devices",
         "description": "Serial numbers of discovered devices that should not be added automatically.",
         "type": "array",
+        "orderable": false,
         "required": false,
         "default": [],
         "items": {
@@ -35,6 +36,7 @@
         "title": "Devices",
         "description": "Add your Denon devices here.",
         "type": "array",
+        "orderable": false,
         "items": {
           "type": "object",
           "properties": {
@@ -104,6 +106,7 @@
               "title": "Inputs",
               "description": "The list of inputs to your device. If you configure inputs here, those inputs will become selectable in the Home app.",
               "type": "array",
+              "orderable": false,
               "required": false,
               "default": [],
               "listItems": 0,
