@@ -56,6 +56,7 @@ Not sure what your device supports? Turn on [device discovery](#1-find-your-devi
 | **Hybrid** | AV receivers and amplifiers with HEOS (e.g. Marantz Cinema series, Denon AVR-X, Denon Home Amp) | Real power on / standby | ✅ | ✅ |
 
 **Why does "power" mean "playback" with HEOS CLI?** HEOS speakers have no real standby command. The plugin therefore treats "playing" as on and "stopped/paused" as off.
+Switching on resumes the last source. If there is nothing to resume (e.g. after the speaker was restarted), the first HEOS favorite is started, so switching on also works in scenes and automations. You can choose another favorite or turn this off with `powerOnFavorite`.
 
 **Hybrid** uses AVR Control for power and HEOS CLI for everything else. Pick it whenever discovery reports both protocols.
 
@@ -126,7 +127,7 @@ Enable **Add Discovered Devices Automatically** in the plugin settings (or set `
 - the **name** from the HEOS app (e.g. *Patio Music*),
 - the **control protocol** `HYBRID` if the device supports both protocols, otherwise `HEOSCLI`,
 - the inputs reported by the device,
-- default settings (volume step 2, no volume limit).
+- default settings (volume step 2, no volume limit, first HEOS favorite when switching on without a source).
 
 The log confirms every device: `Automatically adding discovered device 'Patio Music' (HYBRID, 192.168.1.149).`
 
@@ -287,6 +288,9 @@ The serial number doesn't match. Use the value from device discovery exactly as 
 **Discovery finds nothing.**
 SSDP doesn't cross VLANs or guest networks. Docker installations need `network_mode: host`.
 
+**A speaker doesn't switch on (HEOS CLI).**
+Switching on starts playback. If the speaker has nothing to resume, the plugin starts the HEOS favorite set in `powerOnFavorite` (default: the first one). Make sure at least one favorite exists in the HEOS app (*Music → Favorites*). The debug log shows `starting HEOS favorite …` when this happens.
+
 **The Marantz receiver doesn't react to AVR Control commands.**
 Enable *Network Control* (sometimes called *IP Control*) in the receiver's network settings so it stays reachable in standby.
 
@@ -305,7 +309,7 @@ Every change is checked against the current Homebridge release and for known vul
 | Checked | Versions |
 | --- | --- |
 | Homebridge | 1.11.4 and 2.5.0 (HAP-NodeJS 0.14.3 / 2.3.0) |
-| Node.js | 22, 24 (Homebridge 2.5 supports 22.12+, 24 and 26) |
+| Node.js | 22, 24 and 26 (Homebridge 1.x: up to 24) |
 | Known vulnerabilities | `npm audit`: 0 findings (runtime and development dependencies) |
 
 *Last checked: November 2026.* The GitHub workflow repeats these checks on every push and **weekly**, so new Homebridge releases and newly published CVEs are noticed even without code changes.
