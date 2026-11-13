@@ -331,6 +331,7 @@ npm run watch        # starts a local Homebridge with test/hbConfig and rebuilds
 ```
 
 Manual tests with real devices: see [TESTING.md](TESTING.md).
+Publishing a new version: see [RELEASING.md](RELEASING.md).
 
 Upstream changes from the original project can be merged with:
 
