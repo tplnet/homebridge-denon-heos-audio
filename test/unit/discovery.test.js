@@ -21,7 +21,7 @@ describe("chooseControlProtocol", () => {
 
 describe("sanitizeAccessoryName", () => {
   it("keeps valid names including umlauts", () => {
-    assert.equal(sanitizeAccessoryName("Office Speaker", "x"), "Office Speaker");
+    assert.equal(sanitizeAccessoryName("Küche Lautsprecher", "x"), "Küche Lautsprecher");
     assert.equal(sanitizeAccessoryName("Marantz CINEMA 60", "x"), "Marantz CINEMA 60");
   });
 
