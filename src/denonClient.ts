@@ -69,7 +69,7 @@ export interface IDenonClient {
    * HEOS favorite that is started when switching on a HEOS CLI device that has nothing to resume (0 = disabled).
    * Not used by protocols with a real power state.
    */
-  setPowerOnFavorite?(preset: number): void;
+  setPowerOnFavorite?(preset: number, infoLog?: (message: string) => void): void;
 }
 
 export abstract class DenonClient implements IDenonClient {

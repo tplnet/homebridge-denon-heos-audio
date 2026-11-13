@@ -279,6 +279,8 @@ export class DenonClientHeosCli extends DenonClient {
   private player_id: number | undefined;
   /** HEOS favorite (1, 2, …) that is started when switching on without something to resume; 0 = disabled. */
   private powerOnFavorite = 1;
+  /** Log for actions the user should see without debug logging (e.g. starting the power on favorite). */
+  private infoLog: (message: string) => void = (message) => this.debugLog(message);
   private player_name: string | undefined;
 
   constructor(
@@ -520,8 +522,11 @@ export class DenonClientHeosCli extends DenonClient {
     return isPlaying[playing];
   }
 
-  public setPowerOnFavorite(preset: number) {
+  public setPowerOnFavorite(preset: number, infoLog?: (message: string) => void) {
     this.powerOnFavorite = preset;
+    if (infoLog) {
+      this.infoLog = infoLog;
+    }
   }
 
   /**
@@ -541,8 +546,12 @@ export class DenonClientHeosCli extends DenonClient {
 
   private async powerOn(): Promise<boolean> {
     const rawState = await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_STATE, CommandMode.GET, {});
+    if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.PLAY.VALUE) {
+      this.debugLog("Already playing, nothing to do.");
+      return true;
+    }
     if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.UNKNOWN.VALUE && this.powerOnFavorite > 0) {
-      this.debugLog(`Nothing to resume (play state "${rawState}"), starting HEOS favorite ${this.powerOnFavorite}.`);
+      this.infoLog(`Nothing to resume, starting HEOS favorite ${this.powerOnFavorite}.`);
       return this.playFavorite(this.powerOnFavorite);
     }
 
@@ -552,7 +561,7 @@ export class DenonClientHeosCli extends DenonClient {
       if (!(error instanceof CommandFailedException) || this.powerOnFavorite <= 0) {
         throw error;
       }
-      this.debugLog(`The device refused to resume playback, starting HEOS favorite ${this.powerOnFavorite}.`);
+      this.infoLog(`The speaker refused to resume playback, starting HEOS favorite ${this.powerOnFavorite}.`);
       return this.playFavorite(this.powerOnFavorite);
     }
   }

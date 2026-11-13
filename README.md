@@ -299,6 +299,16 @@ Enable *Network Control* (sometimes called *IP Control*) in the receiver's netwo
 **The device can't be added in the Home app.**
 See [The device does not appear in step 4?](#adding-a-device-to-apple-home-step-by-step)
 
+**Devices appear offline in the Homebridge UI after a restart ("fetch failed"), or commands from the UI don't arrive.**
+Every device runs on its own port. Without a port range, the ports change at every restart and the Homebridge UI may still use the old ones, especially if mDNS doesn't work reliably (e.g. on a Synology NAS: `Failed to create listener for avahi-daemon`). In the Homebridge UI under **Settings → Network**:
+1. set a **port range** for accessories, e.g. `52100`–`52150` (or `"ports": { "start": 52100, "end": 52150 }` in `config.json`), outside of the ports of your bridges,
+2. set the **mDNS Advertiser** to **Ciao**,
+
+then restart Homebridge **once** and reload the page.
+
+**Homebridge doesn't start: `EADDRINUSE: address already in use`.**
+Usually an old Homebridge process is still running (e.g. after several restarts in a row): `ps aux | grep -i [h]omebridge` shows two main `homebridge` processes. Stop Homebridge, end the old process (`kill <pid>`) and start Homebridge again.
+
 **A device is added automatically although I don't want it in HomeKit.**
 Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then remove it from the Home app.
 

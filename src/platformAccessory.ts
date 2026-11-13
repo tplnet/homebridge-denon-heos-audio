@@ -144,7 +144,7 @@ export class DenonAudioAccessory {
     if (!Number.isInteger(powerOnFavorite) || powerOnFavorite < 0) {
       throw new Error("Power on favorite must be 0 (disabled) or the number of a HEOS favorite (1, 2, …)");
     }
-    this.denonClient.setPowerOnFavorite?.(powerOnFavorite);
+    this.denonClient.setPowerOnFavorite?.(powerOnFavorite, (message) => this.log.info(message));
 
     this.configuredInputs = config.inputs ?? [];
     this.unknownInput = new ConfiguredInput("unknown", "Unknown Input", false, 0, false);

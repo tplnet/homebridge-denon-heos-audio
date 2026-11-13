@@ -2,6 +2,17 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.1.1
+
+### Changed
+
+- Switching on a speaker that is already playing no longer sends an unnecessary play command.
+- Starting the power on favorite is shown in the normal log (not only in the debug log), e.g. `Nothing to resume, starting HEOS favorite 1.`
+
+### Documentation
+
+- README: a HEOS favorite is required for switching on without a source; fixed ports and the *Ciao* mDNS advertiser help if devices appear offline in the Homebridge UI after restarts.
+
 ## 1.1.0
 
 ### New

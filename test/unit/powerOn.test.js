@@ -48,6 +48,26 @@ describe("HEOS power on", () => {
     assert.deepEqual(written, [`player/get_play_state?pid=${PID}`, `player/set_play_state?pid=${PID}&state=play`]);
   });
 
+  it("does nothing if the speaker is already playing", async () => {
+    device((name) => {
+      if (name === "player/get_play_state") return { result: "success", message: `pid=${PID}&state=play` };
+    });
+    assert.equal(await client.setPower(true), true);
+    assert.deepEqual(written, [`player/get_play_state?pid=${PID}`]);
+  });
+
+  it("logs starting the favorite to the normal log", async () => {
+    const infos = [];
+    client.setPowerOnFavorite(2, (message) => infos.push(message));
+    device((name) => {
+      if (name === "player/get_play_state") return { result: "success", message: `pid=${PID}&state=unknown` };
+      if (name === "browse/play_preset") return { result: "success", message: `pid=${PID}&preset=2` };
+    });
+    await client.setPower(true);
+    assert.deepEqual(infos, ["Nothing to resume, starting HEOS favorite 2."]);
+    client.setPowerOnFavorite(1);
+  });
+
   it("starts HEOS favorite 1 if there is no source (state unknown)", async () => {
     device((name) => {
       if (name === "player/get_play_state") return { result: "success", message: `pid=${PID}&state=unknown` };

@@ -59,7 +59,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 | --- | :-: | :-: | :-: | :-: |
 | Switch on with nothing to resume (e.g. after a restart of the speaker): first HEOS favorite starts | ☐ | ☐ | – | – |
 | Tile doesn't jump back after switching on / off | ☐ | ☐ | ☐ | ☐ |
-| Power on / off from the Home app | ✅ (Office, Kids Room) | ☐ | ☐ | ✅ |
+| Power on / off from the Home app | ✅ (Office, Kids Room; resumes Spotify) | ☐ | ☐ | ✅ |
 | Power state updates when changed on the device / in the HEOS app | ☐ | ☐ | ☐ | ☐ |
 | Volume slider sets the volume | ☐ | ☐ | ☐ | ☐ |
 | Volume changed on the device updates the slider | ☐ | ☐ | ☐ | ☐ |
