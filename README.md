@@ -213,8 +213,8 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 
 **Afterwards**
 
-- Long-press the tile to see power, volume (in the device settings) and inputs.
-- Use the **Remote** in Control Center to play/pause, skip tracks and change the volume with the iPhone's volume buttons. Select the device at the top of the Remote.
+- Tap the tile to switch the device on or off and to choose an input.
+- The Home app has no volume slider for TV accessories. Change the volume with the **Remote** in Control Center: select the device at the top of the Remote and press the iPhone's volume buttons. The Remote also plays/pauses and skips tracks.
 - If you configured inputs, you can hide or rename them in the device settings under **Inputs**.
 
 **The device does not appear in step 4?**
@@ -298,7 +298,8 @@ Streaming sources (Spotify, TuneIn, AirPlay, …) are recognised and shown as th
 | Control Center → Remote → volume buttons on your iPhone | Volume up / down by `volumeStepSize` |
 | Remote → centre button / play-pause | Play / pause (HEOS CLI, Hybrid) |
 | Remote → left / right | Previous / next track (HEOS CLI, Hybrid) |
-| Siri, scenes and automations | Power, volume, mute and inputs |
+| Siri, scenes and automations | Power and inputs |
+| Homebridge UI (*Speaker* tile) or apps that show all accessory settings (e.g. Eve, Controller for HomeKit) | Set the volume directly, mute / unmute |
 
 ## Troubleshooting
 
