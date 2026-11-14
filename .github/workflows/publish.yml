@@ -39,6 +39,7 @@ jobs:
         run: |
           npm install --no-save homebridge@latest
           node scripts/smoke-test.mjs
+          echo "HOMEBRIDGE_VERSION=$(node -p "require('homebridge/package.json').version")" >> "$GITHUB_ENV"
       - name: Stage the package on npm
         shell: bash   # -eo pipefail: fail the step if npm fails despite tee
         run: |
@@ -65,5 +66,5 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           FLAGS=""
           if [[ "$VERSION" == *-* ]]; then FLAGS="--prerelease"; fi
-          node scripts/release-notes.mjs "$VERSION" > release-notes.md
+          node scripts/release-notes.mjs "$VERSION" "$GITHUB_REF_NAME" --checks > release-notes.md
           gh release create "$GITHUB_REF_NAME" --verify-tag --title "$VERSION" --notes-file release-notes.md --generate-notes $FLAGS

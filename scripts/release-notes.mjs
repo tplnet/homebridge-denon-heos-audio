@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 /**
- * Prints the release notes of one version: its section of CHANGELOG.md plus a link to the full changelog.
- * Used by the release workflows to fill the GitHub release; fails if the version has no (or an empty) section,
- * so that a release cannot go out without a description of its changes.
+ * Prints the release notes of one version: its section of CHANGELOG.md, optionally the checks of this release,
+ * and a link to the changelog. Used by the release workflows to fill the GitHub release; fails if the version
+ * has no (or an empty) section, so that a release cannot go out without a description of its changes.
  *
- * Usage: node scripts/release-notes.mjs [version] [tag]    e.g. node scripts/release-notes.mjs 1.2.6
+ * Usage: node scripts/release-notes.mjs [version] [tag] [--checks]    e.g. node scripts/release-notes.mjs 1.2.6
  * Without a version, the version from package.json is used (npm "version" script: checked during `npm version`).
+ * --checks (publish workflow only) adds what was verified before this release: no known vulnerabilities, unit and
+ * smoke tests and, if HOMEBRIDGE_VERSION is set, the newest Homebridge release the plugin was started with.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -13,13 +15,15 @@ import { fileURLToPath } from "node:url";
 import process from "node:process";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const version = (
-  process.argv[2] ??
-  JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version
-).replace(/^v/, "");
-const tag = process.argv[3] ?? `v${version}`;
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const args = process.argv.slice(2).filter((arg) => arg !== "--checks");
+const withChecks = process.argv.includes("--checks");
+const version = (args[0] ?? pkg.version).replace(/^v/, "");
+const tag = args[1] ?? `v${version}`;
 if (!version) {
-  console.error("Usage: node scripts/release-notes.mjs <version> [tag]");
+  console.error(
+    "Usage: node scripts/release-notes.mjs <version> [tag] [--checks]",
+  );
   process.exit(2);
 }
 
@@ -49,8 +53,35 @@ if (!body) {
   process.exit(1);
 }
 
+const parts = [body];
+if (withChecks) {
+  const checks = [];
+  const homebridge = process.env.HOMEBRIDGE_VERSION;
+  if (homebridge) {
+    checks.push(
+      `Starts with the newest Homebridge release (${homebridge}) on Node.js ${process.versions.node}`,
+    );
+  }
+  checks.push(
+    "No known vulnerabilities (CVEs) in the dependencies (`npm audit`)",
+  );
+  checks.push(
+    "Unit tests and smoke test with simulated HEOS / AVR Control devices passed",
+  );
+  const engines = Object.entries(pkg.engines ?? {}).map(
+    ([name, range]) =>
+      `${name === "node" ? "Node.js" : name[0].toUpperCase() + name.slice(1)} \`${range}\``,
+  );
+  if (engines.length) {
+    checks.push(`Supported: ${engines.join(", ")}`);
+  }
+  parts.push(
+    `### Checked for this release\n\n${checks.map((check) => `- ${check}`).join("\n")}`,
+  );
+}
 const repository = process.env.GITHUB_REPOSITORY;
 const link = repository
   ? `https://github.com/${repository}/blob/${tag}/CHANGELOG.md`
   : "CHANGELOG.md";
-console.log(`${body}\n\n**Full changelog:** [CHANGELOG.md](${link})`);
+parts.push(`**Changelog:** [CHANGELOG.md](${link})`);
+console.log(parts.join("\n\n"));

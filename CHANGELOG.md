@@ -7,7 +7,7 @@ All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-de
 ### Changed
 
 - README: router-neutral instructions for a fixed IP address, corrected Home app usage (tap the tile; the volume is changed with the Remote in Control Center, the Home app has no volume slider for TV accessories), "Nintendo Switch" in the input example.
-- Release notes of GitHub releases are taken from `CHANGELOG.md` (with a link to the full changelog), like in homebridge-tahoma. `npm version` refuses to run without a changelog section; a new workflow fills existing releases.
+- Release notes of GitHub releases are taken from `CHANGELOG.md`, like in homebridge-tahoma. They also list what was checked for the release (newest Homebridge release, `npm audit`, tests, supported Node.js and Homebridge versions) and link to the changelog. `npm version` refuses to run without a changelog section; a new workflow fills existing releases.
 
 No changes to the plugin code.
 
