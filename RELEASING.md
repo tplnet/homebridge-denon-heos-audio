@@ -35,7 +35,7 @@ and the workflow uses this section as the description of the GitHub release, fol
 Write each entry from the user's point of view first (what changes in Apple Home, the Homebridge UI or the log), technical details after it;
 with several entries, group them under `### Added`, `### Changed`, `### Fixed` and `### Security`.
 
-Existing releases can be (re)filled with **Actions** → **Release notes** → **Run workflow** (a tag such as `v1.2.6`, or `all`).
+Existing releases can be (re)filled with **Actions** → **Release notes** → **Run workflow** (a tag such as `v1.2.6`, or `all`). The section *Checked for this release* written by the publish run is kept.
 
 Versions with a suffix (e.g. `1.1.0-beta.1`) are staged with the npm tag `next` and marked as pre-release on GitHub, so they are not offered as an update in the Homebridge UI.
 
