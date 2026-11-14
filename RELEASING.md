@@ -29,8 +29,11 @@ so a compromised workflow or repository can't publish on its own.
 
 Before tagging, describe the changes in a `## X.Y.Z` section at the top of `CHANGELOG.md`. `npm version` refuses to run without it,
 and the workflow uses this section as the description of the GitHub release, followed by what was checked for the release
-(newest Homebridge release, `npm audit`, tests, supported versions) and a link to the changelog
+(newest Homebridge release, `npm audit`, tests, tested Node.js and supported Homebridge versions) and a link to the changelog
 (and stops before publishing if it is missing). Preview: `node scripts/release-notes.mjs 1.1.0`.
+
+Write each entry from the user's point of view first (what changes in Apple Home, the Homebridge UI or the log), technical details after it;
+with several entries, group them under `### Added`, `### Changed`, `### Fixed` and `### Security`.
 
 Existing releases can be (re)filled with **Actions** → **Release notes** → **Run workflow** (a tag such as `v1.2.6`, or `all`).
 

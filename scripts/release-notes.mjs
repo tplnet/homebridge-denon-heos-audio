@@ -7,7 +7,8 @@
  * Usage: node scripts/release-notes.mjs [version] [tag] [--checks]    e.g. node scripts/release-notes.mjs 1.2.6
  * Without a version, the version from package.json is used (npm "version" script: checked during `npm version`).
  * --checks (publish workflow only) adds what was verified before this release: no known vulnerabilities, unit and
- * smoke tests and, if HOMEBRIDGE_VERSION is set, the newest Homebridge release the plugin was started with.
+ * smoke tests, the Node.js versions of the CI matrix and, if HOMEBRIDGE_VERSION is set, the newest Homebridge release
+ * the plugin was started with. Same format in all tplnet Homebridge projects.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -68,12 +69,19 @@ if (withChecks) {
   checks.push(
     "Unit tests and smoke test with simulated HEOS / AVR Control devices passed",
   );
-  const engines = Object.entries(pkg.engines ?? {}).map(
-    ([name, range]) =>
-      `${name === "node" ? "Node.js" : name[0].toUpperCase() + name.slice(1)} \`${range}\``,
+  const matrix = /^\s*node:\s*\[([^\]]+)\]/m.exec(
+    readFileSync(join(root, ".github/workflows/ci.yml"), "utf8"),
   );
-  if (engines.length) {
-    checks.push(`Supported: ${engines.join(", ")}`);
+  if (matrix) {
+    checks.push(
+      `Built and tested with Node.js ${matrix[1]
+        .split(",")
+        .map((node) => node.trim())
+        .join(", ")}`,
+    );
+  }
+  if (pkg.engines?.homebridge) {
+    checks.push(`Supports Homebridge \`${pkg.engines.homebridge}\``);
   }
   parts.push(
     `### Checked for this release\n\n${checks.map((check) => `- ${check}`).join("\n")}`,
