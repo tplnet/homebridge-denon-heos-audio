@@ -263,7 +263,7 @@ The Homebridge UI shows the German form when its language is set to **Deutsch** 
 
 ## Inputs
 
-**You usually don't have to configure inputs.** With HEOS CLI and Hybrid the plugin asks the device for its inputs at startup and shows exactly those in the Home app, with the names set on the device (e.g. *Apple TV* or *Switch* on a Marantz receiver):
+**You usually don't have to configure inputs.** With HEOS CLI and Hybrid the plugin asks the device for its inputs at startup and shows exactly those in the Home app, with the names set on the device (e.g. *Apple TV* or *Nintendo Switch* on a Marantz receiver):
 
 | Device (examples) | Inputs reported by the device |
 | --- | --- |
