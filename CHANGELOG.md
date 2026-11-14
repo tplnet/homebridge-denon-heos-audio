@@ -2,6 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.7
+
+### Changed
+
+- README: router-neutral instructions for a fixed IP address, corrected Home app usage (tap the tile; the volume is changed with the Remote in Control Center, the Home app has no volume slider for TV accessories), "Nintendo Switch" in the input example.
+- Release notes of GitHub releases are taken from `CHANGELOG.md` (with a link to the full changelog), like in homebridge-tahoma. `npm version` refuses to run without a changelog section; a new workflow fills existing releases.
+
+No changes to the plugin code.
+
 ## 1.2.6
 
 ### Added
