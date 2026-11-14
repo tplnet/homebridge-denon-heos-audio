@@ -1,0 +1,274 @@
+{
+  "pluginAlias": "DenonHeosAudio",
+  "pluginType": "platform",
+  "singular": true,
+  "strictValidation": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "deviceDiscovery": {
+        "title": "Geräteerkennung",
+        "description": "Sucht automatisch nach Denon- und Marantz-Geräten im Netzwerk. Gefundene Geräte werden nach dem Start des Plugins im Homebridge-Log aufgeführt (Log-Level mindestens „info“ oder unten das Konsolen-Log aktivieren).",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      "autoAddDiscoveredDevices": {
+        "title": "Gefundene Geräte automatisch hinzufügen",
+        "description": "Fügt jedes im Netzwerk gefundene Denon- oder Marantz-Gerät als Gerät hinzu, mit dem Namen aus der HEOS-App und dem besten Steuerprotokoll (Hybrid, falls unterstützt). Geräte, die unten unter „Geräte“ eingetragen sind, behalten ihre manuelle Konfiguration. Jedes Gerät muss einmal in der Home-App hinzugefügt werden.",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      "excludedSerialNumbers": {
+        "title": "Ausgeschlossene Geräte",
+        "description": "Seriennummern gefundener Geräte, die nicht automatisch hinzugefügt werden sollen.",
+        "type": "array",
+        "orderable": false,
+        "required": false,
+        "default": [],
+        "items": {
+          "type": "string",
+          "title": "Seriennummer"
+        }
+      },
+      "devices": {
+        "title": "Geräte",
+        "description": "Hier Geräte manuell eintragen.",
+        "type": "array",
+        "orderable": false,
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "placeholder": "Name des Lautsprechers",
+              "required": true
+            },
+            "serialNumber": {
+              "title": "Seriennummer",
+              "description": "Wenn du die Seriennummer nicht kennst, aktiviere die Geräteerkennung. Sie steht dann im Log.",
+              "type": "string",
+              "required": true
+            },
+            "ip": {
+              "title": "IP-Adresse",
+              "description": "Gib dem Gerät im Router eine feste IP-Adresse und trage sie hier ein.",
+              "type": "string",
+              "format": "ipv4",
+              "required": true
+            },
+            "controlProtocol": {
+              "title": "Steuerprotokoll",
+              "description": "HEOS CLI: Lautsprecher wie die Denon-Home-Serie (Ein/Aus = Wiedergabe/Stopp). Hybrid: Geräte, die zusätzlich AVR Control unterstützen, z. B. AV-Receiver und der Denon Home Amp (echter Standby). AVR Control: Receiver ohne HEOS. Die Geräteerkennung zeigt die unterstützten Protokolle im Log; ein nicht unterstütztes Protokoll wird beim Start automatisch ersetzt (mit Warnung).",
+              "type": "string",
+              "oneOf": [
+                {
+                  "const": "AVRCONTROL",
+                  "title": "AVR Control"
+                },
+                {
+                  "const": "HEOSCLI",
+                  "title": "HEOS CLI"
+                },
+                {
+                  "const": "HYBRID",
+                  "title": "Hybrid"
+                }
+              ],
+              "required": true
+            },
+            "volumeLimitEnabled": {
+              "title": "Lautstärkebegrenzung",
+              "description": "Mit Begrenzung entspricht 100 % Lautstärke in der Home-App diesem Prozentwert am Gerät.",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            },
+            "volumeLimit": {
+              "description": "Wirkt nur, wenn die Lautstärkebegrenzung oben aktiviert ist.",
+              "type": "integer",
+              "required": false,
+              "minimum": 0,
+              "maximum": 99,
+              "default": 99
+            },
+            "volumeStepSize": {
+              "title": "Lautstärke-Schrittweite",
+              "description": "Um wie viele Prozentpunkte die Lautstärke mit den Lautstärketasten der Fernbedienung erhöht oder verringert wird. Gemessen in Prozentpunkten am Gerät, ohne Umrechnung durch die Lautstärkebegrenzung.",
+              "type": "integer",
+              "required": false,
+              "minimum": 1,
+              "maximum": 10,
+              "default": 2
+            },
+            "powerOnFavorite": {
+              "title": "Favorit beim Einschalten",
+              "description": "Nur HEOS CLI: Hat ein Lautsprecher beim Einschalten nichts fortzusetzen, wird dieser HEOS-Favorit gestartet (1 = erster Favorit in der HEOS-App). 0 = aus.",
+              "type": "integer",
+              "required": false,
+              "minimum": 0,
+              "maximum": 50,
+              "default": 1
+            },
+            "inputs": {
+              "title": "Eingänge",
+              "description": "Eingänge des Geräts. Wenn du hier Eingänge einträgst, sind genau diese in der Home-App auswählbar. Ohne Eintrag werden die Eingänge vom Gerät gelesen.",
+              "type": "array",
+              "orderable": false,
+              "required": false,
+              "default": [],
+              "listItems": 0,
+              "minItems": 0,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "inputID": {
+                    "title": "Eingangs-ID",
+                    "type": "string",
+                    "placeholder": "AUX1",
+                    "required": true,
+                    "typeahead": {
+                      "source": [
+                        "ANALOG1",
+                        "ANALOG2",
+                        "AUX1",
+                        "AUX2",
+                        "BD",
+                        "CBL/SAT",
+                        "CD",
+                        "DOCK",
+                        "DVD",
+                        "FAVORITES",
+                        "GAME",
+                        "GAME2",
+                        "IPOD",
+                        "IRADIO",
+                        "IRP",
+                        "LASTFM",
+                        "MPLAY",
+                        "NET",
+                        "NET/USB",
+                        "NETWORK",
+                        "OPTICAL1",
+                        "OPTICAL2",
+                        "PANDORA",
+                        "RHAPSODY",
+                        "SAT/CBL",
+                        "SERVER",
+                        "SPOTIFY",
+                        "TUNER",
+                        "TV",
+                        "USB/IPOD",
+                        "aux_in_1",
+                        "aux_in_2",
+                        "aux_in_3",
+                        "aux_in_4",
+                        "aux_single",
+                        "aux1",
+                        "aux2",
+                        "aux3",
+                        "aux4",
+                        "aux5",
+                        "aux6",
+                        "aux7",
+                        "aux_8k",
+                        "line_in_1",
+                        "line_in_2",
+                        "line_in_3",
+                        "line_in_4",
+                        "coax_in_1",
+                        "coax_in_2",
+                        "optical_in_1",
+                        "optical_in_2",
+                        "optical_in_3",
+                        "hdmi_in_1",
+                        "hdmi_in_2",
+                        "hdmi_in_3",
+                        "hdmi_in_4",
+                        "hdmi_arc_1",
+                        "cable_sat",
+                        "dvd",
+                        "bluray",
+                        "game",
+                        "game2",
+                        "mediaplayer",
+                        "cd",
+                        "tuner",
+                        "hdradio",
+                        "tvaudio",
+                        "phono",
+                        "usbdac",
+                        "analog_in_1",
+                        "analog_in_2",
+                        "recorder_in_1",
+                        "tv"
+                      ]
+                    }
+                  },
+                  "name": {
+                    "title": "Anzeigename",
+                    "type": "string",
+                    "placeholder": "Aux",
+                    "required": true,
+                    "minLength": 1
+                  },
+                  "showInList": {
+                    "title": "In der Eingangsliste zeigen",
+                    "description": "Wenn deaktiviert, erscheint dieser Eingang nicht in der Auswahlliste der Home-App.",
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "sources": {
+          "title": "Auswählbare Wiedergabequellen",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sourceID": {
+                "title": "Quellen-ID",
+                "description": "Wenn du die Quellen-ID nicht kennst, schalte die Quelle am Gerät um und sieh im Homebridge-Log nach der ID.",
+                "type": "string",
+                "required": true
+              },
+              "name": {
+                "title": "Name der Quelle",
+                "description": "Anzeigename für diese Wiedergabequelle.",
+                "type": "string",
+                "required": true
+              }
+            }
+          }
+        }
+      },
+      "consoleLogEnabled": {
+        "title": "Konsolen-Log",
+        "description": "Gibt die Log-Meldungen direkt auf der Konsole aus. Nur zur Fehlersuche gedacht.",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      "consoleLogLevel": {
+        "title": "Log-Level",
+        "description": "Bei aktiviertem Konsolen-Log werden nur Meldungen dieses Levels und darunter ausgegeben.",
+        "type": "string",
+        "enum": [
+          "error",
+          "warn",
+          "success",
+          "info",
+          "debug"
+        ],
+        "required": false,
+        "default": "debug"
+      }
+    }
+  }
+}

@@ -29,6 +29,7 @@ Each device appears in the Home app as a TV accessory, so you can:
 - [Setup](#setup)
 - [Adding a device to Apple Home (step by step)](#adding-a-device-to-apple-home-step-by-step)
 - [Configuration reference](#configuration-reference)
+- [Languages](#languages)
 - [Inputs](#inputs)
 - [Using it in the Home app](#using-it-in-the-home-app)
 - [Troubleshooting](#troubleshooting)
@@ -248,6 +249,17 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 `devices` lists the manually configured devices. Each serial number may only appear once.
 
 A misconfigured device (unknown protocol, invalid volume limit, …) is reported in the log and skipped. The other devices keep working.
+
+## Languages
+
+The settings form in the Homebridge UI is available in these languages:
+
+| Language | File |
+| --- | --- |
+| English (default) | `config.schema.json` |
+| German (Deutsch) | `schemas/config.schema.de.json` |
+
+The Homebridge UI shows the German form when its language is set to **Deutsch** (*Settings* → UI language). With the language set to *Automatic* (auto) and in Homebridge UI versions before 5.15, the English form is shown. Log messages and this README are in English.
 
 ## Inputs
 

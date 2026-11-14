@@ -45,10 +45,14 @@
     "heos-cli"
   ],
   "main": "dist/index.js",
+  "directories": {
+    "schemas": "schemas"
+  },
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "config.schema.json",
+    "schemas/*.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

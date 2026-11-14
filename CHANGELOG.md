@@ -2,6 +2,12 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.2.6
+
+### Added
+
+- German settings form in the Homebridge UI (`schemas/config.schema.de.json`), shown when the UI language is set to Deutsch. A test keeps the fields, defaults and limits identical to the English form. The README lists the supported languages.
+
 ## 1.2.5
 
 ### Fixed
