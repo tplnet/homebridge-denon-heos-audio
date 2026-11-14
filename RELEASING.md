@@ -25,6 +25,14 @@ so a compromised workflow or repository can't publish on its own.
 
    The stage id is shown in the summary of the workflow run on GitHub (Actions).
 
+## Release notes
+
+Before tagging, describe the changes in a `## X.Y.Z` section at the top of `CHANGELOG.md`. `npm version` refuses to run without it,
+and the workflow uses this section as the description of the GitHub release, followed by a link to the full changelog
+(and stops before publishing if it is missing). Preview: `node scripts/release-notes.mjs 1.1.0`.
+
+Existing releases can be (re)filled with **Actions** → **Release notes** → **Run workflow** (a tag such as `v1.2.6`, or `all`).
+
 Versions with a suffix (e.g. `1.1.0-beta.1`) are staged with the npm tag `next` and marked as pre-release on GitHub, so they are not offered as an update in the Homebridge UI.
 
 ## One-time setup

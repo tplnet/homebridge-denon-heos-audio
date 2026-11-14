@@ -386,6 +386,8 @@ npm run watch        # starts a local Homebridge with test/hbConfig and rebuilds
 Manual tests with real devices: see [TESTING.md](TESTING.md).
 Publishing a new version: see [RELEASING.md](RELEASING.md).
 
+Release notes: before tagging, describe the changes in a `## X.Y.Z` section at the top of `CHANGELOG.md`. `npm version` refuses to run without it, and the workflow uses this section as the description of the GitHub release (and stops before publishing if it is missing). Pre-release versions (e.g. `1.4.0-beta.1`) are published under the npm tag `next` and marked as pre-release on GitHub. Existing releases can be (re)filled with *Actions* → *Release notes* → *Run workflow* (tag or `all`).
+
 Upstream changes from the original project can be merged with:
 
 ```bash

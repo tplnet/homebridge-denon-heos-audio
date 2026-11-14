@@ -71,7 +71,7 @@
     "prepublishOnly": "npm run lint && npm test",
     "watch": "npm run build && npm link && nodemon",
     "preversion": "npm run check",
-    "version": "node scripts/check-changelog.mjs",
+    "version": "node scripts/release-notes.mjs > /dev/null",
     "postversion": "git push --follow-tags"
   },
   "devDependencies": {
