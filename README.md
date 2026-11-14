@@ -21,6 +21,8 @@ Each device appears in the Home app as a TV accessory, so you can:
 > Marantz support and automated tests. See the [changelog](CHANGELOG.md).
 > Running it on a [child bridge](https://github.com/homebridge/homebridge/wiki/Child-Bridges) is recommended.
 
+> **Note:** Private hobby project, developed in spare time with the help of AI tools. Use at your own risk; support is best effort. See the [disclaimer](#disclaimer).
+
 ## Contents
 
 - [Which devices work?](#which-devices-work)
@@ -36,6 +38,7 @@ Each device appears in the Home app as a TV accessory, so you can:
 - [Compatibility and security](#compatibility-and-security)
 - [Privacy](#privacy)
 - [Development](#development)
+- [Disclaimer](#disclaimer)
 
 ## Which devices work?
 
@@ -399,6 +402,15 @@ git fetch upstream && git merge upstream/main
 
 - [AVR Control protocol specification](https://assets.denon.com/documentmaster/uk/avr1713_avr1613_protocol_v860.pdf)
 - [HEOS CLI protocol specification](https://rn.dmglobal.com/usmodel/HEOS_CLI_ProtocolSpecification-Version-1.17.pdf)
+
+## Disclaimer
+
+This is a private development project. It exists to keep the plugin compatible with current Homebridge releases, to apply security updates, to add features and to fix bugs.
+
+- It is developed in spare time and with the help of AI tools. Every change goes through the automated checks described under [Compatibility and security](#compatibility-and-security) and is tested with real devices where possible, but mistakes can still happen.
+- **Use at your own risk.** The plugin is provided as is, without any warranty (see the [GPL-3.0 license](LICENSE)).
+- Questions, bug reports and feature requests are welcome and are handled on a best-effort basis. There is no guaranteed response time and no guarantee that a request will be implemented.
+- This project is not affiliated with or endorsed by Denon, Marantz, Apple or the Homebridge project. All product names are trademarks of their respective owners.
 
 ## Credits
 
