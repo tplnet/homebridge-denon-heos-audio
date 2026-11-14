@@ -97,6 +97,11 @@ Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control 
 - [ ] Every device can be added with **+ → Add Accessory → More options…** and the setup code from the log.
 - [x] The pairing survives a Homebridge restart and a plugin update.
 
+## 7. Homebridge UI
+
+- [x] With the UI language set to Deutsch, the plugin settings form is shown in German (1.2.6).
+- [x] Dropdowns in the settings form don't make the form move with the mouse (`orderable: false`).
+
 ## Reporting
 
 For any failure note: device, protocol, what you did, what you expected, and the debug log around that time.
