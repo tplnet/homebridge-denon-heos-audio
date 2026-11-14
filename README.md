@@ -129,7 +129,7 @@ In the plugin settings, enable **Device Discovery** and restart Homebridge. Afte
 
 ### Step 2: Give the devices a fixed IP address
 
-The plugin connects to the device's IP address. Reserve the address in your router so it doesn't change (on a FRITZ!Box: *Home Network → Network → device → "Always assign this network device the same IPv4 address"*).
+The plugin connects to the device's IP address. Reserve the address in your router so it doesn't change. Most routers call this a *DHCP reservation*, *static lease* or *fixed IP address*: open the router's web interface, find the list of connected devices and choose the option to always assign the same address to the speaker. The router's manual describes the exact steps.
 With automatic setup the current address is picked up at every Homebridge start; a reservation still avoids problems if the address changes while Homebridge is running.
 
 ### Step 3a: Automatic setup
