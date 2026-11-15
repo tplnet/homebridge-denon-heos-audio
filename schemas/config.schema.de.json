@@ -8,7 +8,7 @@
     "properties": {
       "deviceDiscovery": {
         "title": "Geräteerkennung",
-        "description": "Sucht automatisch nach Denon- und Marantz-Geräten im Netzwerk. Gefundene Geräte werden nach dem Start des Plugins im Homebridge-Log aufgeführt (Log-Level mindestens „info“ oder unten das Konsolen-Log aktivieren).",
+        "description": "Sucht automatisch nach Denon- und Marantz-Geräten im Netzwerk. Etwa 30 Sekunden nach dem Start zeigt das Homebridge-Log eine Übersicht aller gefundenen und konfigurierten Geräte (Log-Level mindestens „info“ oder unten das Konsolen-Log aktivieren).",
         "type": "boolean",
         "required": false,
         "default": true
@@ -61,7 +61,7 @@
             },
             "controlProtocol": {
               "title": "Steuerprotokoll",
-              "description": "HEOS CLI: Lautsprecher wie die Denon-Home-Serie (Ein/Aus = Wiedergabe/Stopp). Hybrid: Geräte, die zusätzlich AVR Control unterstützen, z. B. AV-Receiver und der Denon Home Amp (echter Standby). AVR Control: Receiver ohne HEOS. Die Geräteerkennung zeigt die unterstützten Protokolle im Log; ein nicht unterstütztes Protokoll wird beim Start automatisch ersetzt (mit Warnung).",
+              "description": "HEOS CLI: Lautsprecher wie die Denon-Home-Serie (Ein/Aus = Wiedergabe/Stopp). Hybrid: Geräte, die zusätzlich AVR Control unterstützen, z. B. AV-Receiver und der Denon Home Amp (echter Standby). AVR Control: Receiver ohne HEOS. Die Geräteübersicht im Log zeigt für jedes gefundene Gerät das empfohlene Protokoll; ein nicht unterstütztes Protokoll wird beim Start automatisch ersetzt (mit Warnung).",
               "type": "string",
               "oneOf": [
                 {

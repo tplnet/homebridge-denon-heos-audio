@@ -117,18 +117,7 @@ Devices that you configure manually are **never** touched by the automatic setup
 
 ### Step 1: Find your devices
 
-In the plugin settings, enable **Device Discovery** and restart Homebridge. After a few seconds the log lists every device it finds:
-
-```
-[Platform] Found Denon / Marantz device in local network:
-[Platform] Friendly name: Patio Music
-[Platform] Model name:    Denon Home Amp
-[Platform] Serial number: DCPZ012345678
-[Platform] IP address:    192.168.1.149
-[Platform] Supported modes: AVRCONTROL, HEOSCLI
-```
-
-About 30 seconds after the start, the log shows an **overview of all devices** – the ones found in the network and the manually configured ones – and whether they were added:
+In the plugin settings, enable **Device Discovery** and restart Homebridge. About 30 seconds after the start, the log shows an **overview of all devices** – the ones found in the network and the manually configured ones – and whether they were added:
 
 ```
 [Platform] Device overview: 4 found in the network, 2 added automatically, 1 added manually, 1 not added.
@@ -139,7 +128,7 @@ About 30 seconds after the start, the log shows an **overview of all devices** �
 [Platform] Receiver      Marantz CINEMA 60  192.168.1.146  MBZM012345678  HYBRID    not added (excluded)
 ```
 
-Possible states: *added automatically*, *added manually* (with *not found in the network* if the discovery didn't find a configured device), *not added* with the reason (*automatic adding disabled*, *excluded*, *not reachable*, *no supported protocol*). If a device is found later, an updated overview follows.
+Possible states: *added automatically*, *added manually* (with *not found in the network* if the discovery didn't find a configured device), *not added* with the reason (*automatic adding disabled*, *excluded*, *not reachable*, *no supported protocol*). If a device is found later, an updated overview follows. The supported control protocols of each device (e.g. `AVRCONTROL, HEOSCLI`) are listed in the debug log.
 
 > Make sure Homebridge's log level is at least *info*. Discovery uses SSDP/UPnP and only asks for HEOS devices (search target `urn:schemas-denon-com:device:ACT-Denon:1`), so other devices in your network are not contacted. Homebridge and the devices must be in the same network (no VLAN or guest network separation).
 

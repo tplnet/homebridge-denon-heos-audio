@@ -2,6 +2,12 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.3.1
+
+### Changed
+
+- Shorter log at startup: the details of each discovered device ("Found Denon / Marantz device …", about 8 lines per device) and the notes about manually configured or excluded devices are only written to the debug log. The device overview lists all devices with their status; "Automatically adding discovered device …" stays in the normal log.
+
 ## 1.3.0
 
 ### Added

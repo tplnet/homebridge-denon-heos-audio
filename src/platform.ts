@@ -222,11 +222,11 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     supportedModes: DenonProtocol.ControlMode[],
   ): { status: DeviceStatus; name?: string; protocol?: string } {
     if (this.activeSerialNumbers.has(serialNumber)) {
-      this.log.info(`Device ${serialNumber} is configured manually. Using the manual configuration.`);
+      this.log.debug(`Device ${serialNumber} is configured manually. Using the manual configuration.`);
       return { status: "manual" };
     }
     if (this.isExcluded(serialNumber)) {
-      this.log.info(`Device ${serialNumber} is excluded from automatic adding.`);
+      this.log.debug(`Device ${serialNumber} is excluded from automatic adding.`);
       return { status: "excluded" };
     }
 
@@ -328,14 +328,11 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
       return;
     }
 
-    this.log.success("-------------------------------------------------------");
-    this.log.success("Found Denon / Marantz device in local network:");
-    this.log.success("Friendly name:", device.friendlyName ?? "unknown");
-    this.log.success("Model name:   ", device.modelName ?? "unknown");
-    this.log.success("Serial number:", serial);
-    this.log.success("IP address:   ", device.ip);
-    this.log.success("Supported modes:", supportedModes.map((mode) => DenonProtocol.ControlMode[mode]).join(", "));
-    this.log.success("-------------------------------------------------------");
+    // listed in the device overview; the details per device only in the debug log
+    this.log.debug(
+      `Found device '${device.friendlyName ?? "unknown"}' (${device.modelName ?? "unknown model"}), serial number ${serial}, ` +
+        `IP address ${device.ip}, supported modes: ${supportedModes.map((mode) => DenonProtocol.ControlMode[mode]).join(", ")}`,
+    );
 
     if (this.autoAddEnabled()) {
       const result = this.autoAddDiscoveredDevice(serial, device.ip, device.friendlyName, device.modelName, supportedModes);
