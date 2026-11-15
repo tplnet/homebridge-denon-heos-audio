@@ -2,6 +2,16 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.3.0
+
+### Added
+
+- Device overview in the log: about 30 seconds after the start, a table lists every device found in the network and every manually configured device with its status – *added automatically*, *added manually* (or *not found in the network*) or *not added* with the reason (automatic adding disabled, excluded, not reachable, no supported protocol). Devices found later lead to an updated overview.
+
+### Changed
+
+- README: disclaimer (private hobby project, AI-assisted development, use at your own risk, best-effort support).
+
 ## 1.2.7
 
 ### Changed

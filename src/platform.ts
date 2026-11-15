@@ -8,8 +8,12 @@ import type { DeviceConfig } from "./config.js";
 import { buildDiscoveredDeviceConfig } from "./discovery.js";
 import { checkControlProtocol } from "./protocolCheck.js";
 import { DiscoveredHeosDevice, HeosDiscovery } from "./heosDiscovery.js";
+import { DeviceOverview, DeviceStatus } from "./deviceOverview.js";
 
 const MINUTE = 60 * 1000;
+// first overview after the discovery started, later updates after new devices were found
+const OVERVIEW_FIRST_DELAY_MS = 30 * 1000;
+const OVERVIEW_UPDATE_DELAY_MS = 10 * 1000;
 
 export class DenonAudioPlatform implements DynamicPlatformPlugin {
   public readonly rawLog: Logger;
@@ -35,6 +39,11 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private interruptDiscovery: (() => void) | undefined;
   private shuttingDown = false;
 
+  // overview of all devices, logged after the discovery
+  public readonly deviceOverview = new DeviceOverview();
+  private overviewTimer: NodeJS.Timeout | undefined;
+  private overviewLogged = false;
+
   constructor(log: Logger, config: PlatformConfig, api: API) {
     this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel], PLUGIN_NAME, true) : log;
     this.log = new CustomLogging.LoggerPrefixWrapper(this.rawLog, "Platform");
@@ -58,6 +67,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     this.api.on("shutdown", () => {
       this.shuttingDown = true;
       clearTimeout(this.discoveryRestartTimer);
+      clearTimeout(this.overviewTimer);
       this.activeDiscovery?.stop();
       this.interruptDiscovery?.();
     });
@@ -85,6 +95,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
           continue;
         }
         this.activeSerialNumbers.add(deviceConfig.serialNumber);
+        this.deviceOverview.addManual(deviceConfig);
 
         // generate a unique id for the accessory this should be generated from something globally unique, but constant, for example, the device serial number
         // or MAC address
@@ -124,10 +135,31 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
       }
     }
 
-    if (this.config.deviceDiscovery || this.autoAddEnabled()) {
+    if (this.discoveryEnabled()) {
+      this.scheduleOverview(OVERVIEW_FIRST_DELAY_MS);
       this.runDeviceDiscovery().catch((error) => {
         this.log.warn("Device discovery stopped unexpectedly. New devices will no longer be discovered.", error);
       });
+    }
+  }
+
+  private discoveryEnabled(): boolean {
+    return this.config.deviceDiscovery === true || this.autoAddEnabled();
+  }
+
+  /** Logs the device overview after the delay (restarts the delay if called again before). */
+  private scheduleOverview(delayMs: number) {
+    clearTimeout(this.overviewTimer);
+    this.overviewTimer = setTimeout(() => {
+      this.overviewLogged = true;
+      this.logOverview();
+    }, delayMs);
+    this.overviewTimer.unref?.();
+  }
+
+  logOverview() {
+    for (const line of this.deviceOverview.format(this.discoveryEnabled())) {
+      this.log.info(line);
     }
   }
 
@@ -182,24 +214,31 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   /**
    * Adds a discovered device as new accessory, unless it is configured manually, excluded or already set up.
    */
-  private autoAddDiscoveredDevice(serialNumber: string, ip: string, friendlyName: string | undefined, modelName: string | undefined, supportedModes: DenonProtocol.ControlMode[]) {
+  private autoAddDiscoveredDevice(
+    serialNumber: string,
+    ip: string,
+    friendlyName: string | undefined,
+    modelName: string | undefined,
+    supportedModes: DenonProtocol.ControlMode[],
+  ): { status: DeviceStatus; name?: string; protocol?: string } {
     if (this.activeSerialNumbers.has(serialNumber)) {
       this.log.info(`Device ${serialNumber} is configured manually. Using the manual configuration.`);
-      return;
+      return { status: "manual" };
     }
     if (this.isExcluded(serialNumber)) {
       this.log.info(`Device ${serialNumber} is excluded from automatic adding.`);
-      return;
+      return { status: "excluded" };
     }
 
     const deviceConfig = buildDiscoveredDeviceConfig({ serialNumber, ip, friendlyName, modelName, supportedModes });
     if (!deviceConfig) {
-      return;
+      return { status: "unsupported" };
     }
 
     this.activeSerialNumbers.add(serialNumber);
     this.log.info(`Automatically adding discovered device '${deviceConfig.name}' (${deviceConfig.controlProtocol}, ${ip}).`);
     this.publishNewAccessory(deviceConfig, new this.api.platformAccessory(deviceConfig.name, this.api.hap.uuid.generate(serialNumber)), supportedModes);
+    return { status: "auto", name: deviceConfig.name, protocol: deviceConfig.controlProtocol };
   }
 
   /**
@@ -283,7 +322,9 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
     this.log.debug("Checking protocol support for:", device.ip);
     const supportedModes = await DenonProtocol.checkProtocolSupport(device.ip, this.log.debug.bind(this.log));
+    const heosName = device.friendlyName ?? device.modelName ?? serial;
     if (supportedModes.length === 0) {
+      this.recordDiscovered(device, { status: "unreachable", name: heosName });
       return;
     }
 
@@ -297,7 +338,22 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     this.log.success("-------------------------------------------------------");
 
     if (this.autoAddEnabled()) {
-      this.autoAddDiscoveredDevice(serial, device.ip, device.friendlyName, device.modelName, supportedModes);
+      const result = this.autoAddDiscoveredDevice(serial, device.ip, device.friendlyName, device.modelName, supportedModes);
+      this.recordDiscovered(device, { ...result, name: result.name ?? heosName });
+    } else {
+      this.recordDiscovered(device, {
+        status: this.activeSerialNumbers.has(serial) ? "manual" : "autoAddDisabled",
+        name: heosName,
+        protocol: buildDiscoveredDeviceConfig({ ...device, supportedModes })?.controlProtocol,
+      });
+    }
+  }
+
+  private recordDiscovered(device: DiscoveredHeosDevice, result: { status: DeviceStatus; name: string; protocol?: string }) {
+    this.deviceOverview.addDiscovered({ serialNumber: device.serialNumber, model: device.modelName, ip: device.ip, ...result });
+    if (this.overviewLogged) {
+      // a device found later (e.g. switched on hours after the start): log the updated overview
+      this.scheduleOverview(OVERVIEW_UPDATE_DELAY_MS);
     }
   }
 }
