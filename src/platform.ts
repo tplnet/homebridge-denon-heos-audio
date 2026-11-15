@@ -14,6 +14,8 @@ const MINUTE = 60 * 1000;
 // first overview after the discovery started, later updates after new devices were found
 const OVERVIEW_FIRST_DELAY_MS = 30 * 1000;
 const OVERVIEW_UPDATE_DELAY_MS = 10 * 1000;
+// devices found within this time after the start are published together with the manual ones, in a fixed order
+const INITIAL_DISCOVERY_WINDOW_MS = 10 * 1000;
 
 export class DenonAudioPlatform implements DynamicPlatformPlugin {
   public readonly rawLog: Logger;
@@ -44,6 +46,15 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private overviewTimer: NodeJS.Timeout | undefined;
   private overviewLogged = false;
 
+  // Homebridge assigns the ports of external accessories in the order they are published. Publishing the devices
+  // of the start together, sorted by serial number, gives every device the same port at every start
+  // (as long as the same devices are there), so Apple Home finds them again right away.
+  private initialWindowOpen = true;
+  private initialPublishDone = false;
+  private initialWindowTimer: NodeJS.Timeout | undefined;
+  private readonly pendingInitialSetups = new Set<Promise<unknown>>();
+  private readonly readyToPublish: PlatformAccessory[] = [];
+
   constructor(log: Logger, config: PlatformConfig, api: API) {
     this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel], PLUGIN_NAME, true) : log;
     this.log = new CustomLogging.LoggerPrefixWrapper(this.rawLog, "Platform");
@@ -68,6 +79,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
       this.shuttingDown = true;
       clearTimeout(this.discoveryRestartTimer);
       clearTimeout(this.overviewTimer);
+      clearTimeout(this.initialWindowTimer);
       this.activeDiscovery?.stop();
       this.interruptDiscovery?.();
     });
@@ -137,9 +149,53 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
     if (this.discoveryEnabled()) {
       this.scheduleOverview(OVERVIEW_FIRST_DELAY_MS);
+      this.initialWindowTimer = setTimeout(() => this.closeInitialWindow(), INITIAL_DISCOVERY_WINDOW_MS);
+      this.initialWindowTimer.unref?.();
       this.runDeviceDiscovery().catch((error) => {
         this.log.warn("Device discovery stopped unexpectedly. New devices will no longer be discovered.", error);
       });
+    } else {
+      this.closeInitialWindow();
+    }
+  }
+
+  /** Tracks a setup started before the first publish, so that the first publish waits for it. */
+  private trackInitialSetup(setup: Promise<unknown>) {
+    if (this.initialPublishDone) {
+      return;
+    }
+    this.pendingInitialSetups.add(setup);
+    void setup.finally(() => {
+      this.pendingInitialSetups.delete(setup);
+      this.publishInitialAccessories();
+    });
+  }
+
+  closeInitialWindow() {
+    this.initialWindowOpen = false;
+    this.publishInitialAccessories();
+  }
+
+  /** Publishes the accessories of the start in one call, sorted by serial number (stable ports). */
+  private publishInitialAccessories() {
+    if (this.initialPublishDone || this.initialWindowOpen || this.pendingInitialSetups.size > 0) {
+      return;
+    }
+    this.initialPublishDone = true;
+    const serial = (accessory: PlatformAccessory) => String(accessory.context.device?.serialNumber ?? "");
+    const accessories = this.readyToPublish.splice(0).sort((a, b) => serial(a).localeCompare(serial(b)));
+    if (accessories.length > 0) {
+      this.log.debug("Publishing accessories in this order (ports are assigned in this order):", accessories.map((a) => a.displayName).join(", "));
+      this.api.publishExternalAccessories(PLUGIN_NAME, accessories);
+    }
+  }
+
+  private publishAccessory(accessory: PlatformAccessory) {
+    if (this.initialPublishDone) {
+      // found later: published right away (gets the next free port)
+      this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
+    } else {
+      this.readyToPublish.push(accessory);
     }
   }
 
@@ -179,7 +235,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private publishNewAccessory(deviceConfig: DeviceConfig, accessory: PlatformAccessory, supportedModes?: DenonProtocol.ControlMode[]) {
     // store a copy of the device object in the `accessory.context`
     accessory.context.device = deviceConfig;
-    this.withCheckedProtocol(deviceConfig, supportedModes)
+    const setup = this.withCheckedProtocol(deviceConfig, supportedModes)
       .then(async (checkedConfig) => {
         const handler = this.createAccessoryHandler(accessory, checkedConfig);
         if (!handler) {
@@ -187,9 +243,10 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
         }
         // the inputs are read from the device first, as the services of a published accessory should not change anymore
         await handler.setupInputs().catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error));
-        this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
+        this.publishAccessory(accessory);
       })
       .catch((error) => this.log.error(`Could not set up '${deviceConfig.name}':`, error));
+    this.trackInitialSetup(setup);
   }
 
   /**
@@ -299,10 +356,14 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
         this.interruptDiscovery = () => resolve(undefined);
         discovery.on("error", resolve);
         discovery.on("device", (device: DiscoveredHeosDevice) => {
-          this.checkDiscoveredDevice(device).catch((error) => {
+          const check = this.checkDiscoveredDevice(device).catch((error) => {
             // a single misbehaving device must not stop the discovery
             this.log.debug("Error while checking a discovered device:", error);
           });
+          if (this.initialWindowOpen) {
+            // a device found within the window is published with the others, even if its check takes longer
+            this.trackInitialSetup(check);
+          }
         });
         discovery.start().catch(resolve);
       });

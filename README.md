@@ -311,6 +311,9 @@ Streaming sources (Spotify, TuneIn, AirPlay, …) are recognised and shown as th
 **The device shows "No Response".**
 Check that the IP address is still correct and that the device is reachable from the Homebridge host (`ping <ip>`). Speakers in deep sleep sometimes need one wake-up via the HEOS app.
 
+**Some devices show "No Response" after a Homebridge restart, others work.**
+Apple Home (or your home hub) may still use an old port of the device. Since 1.3.2 every device gets the same port at every start, as long as the same devices are there: the plugin publishes the devices of the start together, sorted by serial number, about 10 seconds after the start (with device discovery). If a device still shows *No Response*, restart only the **child bridge** of this plugin (not the whole Homebridge): the devices keep their ports and are announced again. To check which port a device is announced with, run on a Mac: `dns-sd -L "<name shown in the log, e.g. Office 1B20>" _hap._tcp local.` and compare it with `… is running on port …` in the log.
+
 **"Player list does not include serial …" in the debug log.**
 The serial number doesn't match. Use the value from device discovery exactly as shown.
 

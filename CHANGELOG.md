@@ -2,6 +2,19 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.3.2
+
+### Fixed
+
+- Devices no longer show "No Response" in Apple Home after a Homebridge restart because their port changed. Every device now gets the same port at every start (as long as the same devices are there): the devices of the start – manual ones and the ones found by the discovery within the first 10 seconds – are published together, sorted by serial number. Before, the order depended on which device answered first, so the ports were shuffled and Apple Home sometimes kept connecting to the old port. Devices found later are published right away.
+- With device discovery enabled, the devices appear in Apple Home about 10 seconds after the start.
+
+### Changed
+
+- README: troubleshooting for "No Response" after a restart (restart only the child bridge, check the announced port with `dns-sd`).
+
+The ports are assigned once in the new order after updating; afterwards they stay the same.
+
 ## 1.3.1
 
 ### Changed
