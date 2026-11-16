@@ -15,19 +15,22 @@ Maintained fork of hov3rcraft/homebridge-denon-heos-audio ("Homebridge Denon & M
 - Control protocols: HEOS CLI (TCP 1255, JSON, player ids can be negative), AVR Control (TCP 23) and Hybrid (power via AVR Control, the rest via HEOS CLI). The configured protocol is checked against the open ports at startup.
 - Discovery: own SSDP implementation (`src/heosDiscovery.ts`, search target `urn:schemas-denon-com:device:ACT-Denon:1`); device descriptions are only fetched from the device that answered. Manually configured devices always win over automatically added ones.
 - Log: the device overview table (~30 s after the start) is the normal-level summary; details per discovered device only in the debug log.
-- Exception to the language rule below: the settings form has a German translation (`schemas/config.schema.de.json`, shown when the Homebridge UI language is "Deutsch"). It must have the same fields, defaults and limits as `config.schema.json` (checked by `test/unit/configSchema.test.js`).
+- German settings form (the exception in the language rule below): `schemas/config.schema.de.json` shown when the Homebridge UI language is "Deutsch". It must have the same fields, defaults and limits as `config.schema.json` (checked by `test/unit/configSchema.test.js`).
 - The plugin collects no data and only talks to devices in the local network (README "Privacy"); keep it that way.
 - Never put real test data (device names such as the maintainer's room names, serial numbers, IP addresses, HEOS player ids) into the repository, tests or docs; use invented values (e.g. `192.0.2.x`, `BLT012345678`).
-- README keeps the disclaimer (private hobby project, AI-assisted, use at your own risk, best-effort support).
-- Default branch is `main` (not `master`).
+- Default branch is `main` (not `master`). CHANGELOG headings before 1.3.3 have no date; new ones use `## X.Y.Z (YYYY-MM-DD)`.
 
 ## Rules for all tplnet Homebridge projects
 
 These apply to `@tplnet/homebridge-tahoma`, `@tplnet/overkiz-client`, `homebridge-tahoma-local` and `@tplnet/homebridge-denon-heos-audio`. Keep the four projects consistent: a change to the release or check process in one of them goes into all of them.
 
 ### Language and wording
-- Code, comments, README, CHANGELOG and commit messages in English. No German translation of the plugin.
+- Code, comments, README, CHANGELOG and commit messages in English. No German translation of the plugin (exception for now: the German settings form of `@tplnet/homebridge-denon-heos-audio`).
 - User-facing text says "Apple Home", not "HomeKit" (README, settings schema, log messages, execution labels). Technical code comments may keep "HomeKit".
+
+### README
+- Every README has the disclaimer: a short note at the top ("Private hobby project, developed in spare time with the help of AI tools. Use at your own risk; support is best effort. See the disclaimer.") and a "Disclaimer" section before the license / credits: private project to keep compatibility, security updates, features and bug fixes going; developed in spare time with the help of AI tools; use at your own risk, no warranty (link to the project's license); questions, bug reports and requests are handled best effort, without guarantee; not affiliated with the brands named in the project.
+- Keep the "Compatibility and security" (or "Security") and "Privacy" sections up to date where the README has them.
 
 ### Compatibility and CVEs
 - Every change and every release: `npm audit --omit=dev` must report 0 vulnerabilities in the runtime dependencies, and plugins must start with the newest Homebridge release (smoke test against `homebridge@latest`, CI on Node.js 22, 24 and 26).

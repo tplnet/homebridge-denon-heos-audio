@@ -359,7 +359,7 @@ Requirements: Homebridge 1.8 or newer (2.x supported), Node.js 22.12+, 24 or 26.
 
 Run all checks locally with `npm run check` (`npm audit`, lint, unit tests, smoke test). To test another Homebridge version, install it temporarily with `npm install --no-save homebridge@<version>`.
 
-Found a security issue? Please report it privately via GitHub (*Security* → *Report a vulnerability*) instead of a public issue.
+Found a security issue? Please report it privately via GitHub (*Security* → *Report a vulnerability*) instead of a public issue, see [SECURITY.md](SECURITY.md).
 
 ## Privacy
 
