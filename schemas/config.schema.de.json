@@ -34,7 +34,7 @@
       },
       "devices": {
         "title": "Geräte",
-        "description": "Hier Geräte manuell eintragen.",
+        "description": "Hier eingetragene Geräte werden genau mit diesen Einstellungen eingerichtet. Automatisch hinzugefügte Geräte brauchen keinen Eintrag; trage sie nur ein, um ihre Einstellungen zu ändern (gleiche Seriennummer).",
         "type": "array",
         "orderable": false,
         "items": {
@@ -43,7 +43,7 @@
             "name": {
               "title": "Name",
               "type": "string",
-              "placeholder": "Name des Lautsprechers",
+              "placeholder": "Name in der Home-App",
               "required": true
             },
             "serialNumber": {
@@ -92,11 +92,12 @@
               "required": false,
               "minimum": 0,
               "maximum": 99,
-              "default": 99
+              "default": 99,
+              "title": "Lautstärkegrenze (%)"
             },
             "volumeStepSize": {
               "title": "Lautstärke-Schrittweite",
-              "description": "Um wie viele Prozentpunkte die Lautstärke mit den Lautstärketasten der Fernbedienung erhöht oder verringert wird. Gemessen in Prozentpunkten am Gerät, ohne Umrechnung durch die Lautstärkebegrenzung.",
+              "description": "Um wie viele Prozentpunkte die Lautstärketasten der Fernbedienung die Lautstärke ändern. Gemessen am Gerät, ohne Umrechnung durch die Lautstärkegrenze.",
               "type": "integer",
               "required": false,
               "minimum": 1,
@@ -225,27 +226,6 @@
               }
             }
           }
-        },
-        "sources": {
-          "title": "Auswählbare Wiedergabequellen",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "sourceID": {
-                "title": "Quellen-ID",
-                "description": "Wenn du die Quellen-ID nicht kennst, schalte die Quelle am Gerät um und sieh im Homebridge-Log nach der ID.",
-                "type": "string",
-                "required": true
-              },
-              "name": {
-                "title": "Name der Quelle",
-                "description": "Anzeigename für diese Wiedergabequelle.",
-                "type": "string",
-                "required": true
-              }
-            }
-          }
         }
       },
       "consoleLogEnabled": {
@@ -270,5 +250,96 @@
         "default": "debug"
       }
     }
-  }
+  },
+  "layout": [
+    "deviceDiscovery",
+    "autoAddDiscoveredDevices",
+    {
+      "key": "excludedSerialNumbers",
+      "type": "array",
+      "orderable": false,
+      "items": [
+        "excludedSerialNumbers[]"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Geräte (manuelle Einrichtung)",
+      "description": "Optional. Trage hier ein Gerät ein, um es manuell einzurichten oder die Einstellungen eines automatisch hinzugefügten Geräts zu ändern.",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "key": "devices",
+          "type": "array",
+          "orderable": false,
+          "items": [
+            {
+              "type": "div",
+              "items": [
+                "devices[].name",
+                "devices[].serialNumber",
+                "devices[].ip",
+                "devices[].controlProtocol",
+                {
+                  "type": "section",
+                  "title": "Lautstärke",
+                  "expandable": true,
+                  "expanded": false,
+                  "items": [
+                    "devices[].volumeLimitEnabled",
+                    "devices[].volumeLimit",
+                    "devices[].volumeStepSize"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "title": "Einschalten (HEOS CLI)",
+                  "expandable": true,
+                  "expanded": false,
+                  "items": [
+                    "devices[].powerOnFavorite"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "title": "Eingänge",
+                  "expandable": true,
+                  "expanded": false,
+                  "items": [
+                    {
+                      "key": "devices[].inputs",
+                      "type": "array",
+                      "orderable": false,
+                      "items": [
+                        {
+                          "type": "div",
+                          "items": [
+                            "devices[].inputs[].inputID",
+                            "devices[].inputs[].name",
+                            "devices[].inputs[].showInList"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Fehlersuche",
+      "description": "Nur für die Fehlersuche nötig.",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "consoleLogEnabled",
+        "consoleLogLevel"
+      ]
+    }
+  ]
 }

@@ -2,7 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const schema = JSON.parse(fs.readFileSync(new URL("../../config.schema.json", import.meta.url), "utf8"));
+const schema = JSON.parse(
+  fs.readFileSync(new URL("../../config.schema.json", import.meta.url), "utf8"),
+);
 
 function collectArrays(node, path, result = []) {
   if (node && typeof node === "object") {
@@ -24,7 +26,11 @@ describe("config.schema.json", () => {
     const arrays = collectArrays(schema.schema, "schema");
     assert.ok(arrays.length >= 3);
     for (const { path, node } of arrays) {
-      assert.equal(node.orderable, false, `${path} must set "orderable": false`);
+      assert.equal(
+        node.orderable,
+        false,
+        `${path} must set "orderable": false`,
+      );
     }
   });
 
@@ -45,7 +51,11 @@ const withoutTexts = (node) =>
   Array.isArray(node)
     ? node.map(withoutTexts)
     : node && typeof node === "object"
-      ? Object.fromEntries(Object.entries(node).filter(([key]) => !TEXT_KEYS.has(key)).map(([key, value]) => [key, withoutTexts(value)]))
+      ? Object.fromEntries(
+          Object.entries(node)
+            .filter(([key]) => !TEXT_KEYS.has(key))
+            .map(([key, value]) => [key, withoutTexts(value)]),
+        )
       : node;
 const texts = (node, result = []) => {
   if (Array.isArray(node)) {
@@ -63,7 +73,9 @@ const texts = (node, result = []) => {
 };
 
 describe("translated config schemas (Homebridge UI)", () => {
-  const packageJson = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+  const packageJson = JSON.parse(
+    fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+  );
   const languages = ["de"];
 
   it("are found by the Homebridge UI and published", () => {
@@ -72,7 +84,15 @@ describe("translated config schemas (Homebridge UI)", () => {
   });
 
   for (const language of languages) {
-    const translated = JSON.parse(fs.readFileSync(new URL(`../../schemas/config.schema.${language}.json`, import.meta.url), "utf8"));
+    const translated = JSON.parse(
+      fs.readFileSync(
+        new URL(
+          `../../schemas/config.schema.${language}.json`,
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
 
     it(`${language}: same fields, defaults and limits as config.schema.json`, () => {
       assert.deepEqual(withoutTexts(translated), withoutTexts(schema));
@@ -82,4 +102,61 @@ describe("translated config schemas (Homebridge UI)", () => {
       assert.deepEqual(texts(translated), texts(schema));
     });
   }
+});
+
+describe("settings form layout", () => {
+  // with a layout, the Homebridge UI only shows the fields listed in it
+  const schemaKeys = (node, prefix, result = []) => {
+    for (const [key, value] of Object.entries(node.properties ?? {})) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      result.push(path);
+      if (value.type === "array" && value.items?.properties) {
+        schemaKeys(value.items, `${path}[]`, result);
+      }
+    }
+    return result;
+  };
+  const layoutKeys = (items, result = []) => {
+    for (const item of items) {
+      if (typeof item === "string") {
+        result.push(item);
+      } else {
+        if (item.key) {
+          result.push(item.key);
+        }
+        if (Array.isArray(item.items)) {
+          layoutKeys(item.items, result);
+        }
+      }
+    }
+    return result;
+  };
+  it("shows every option exactly once", () => {
+    const expected = schemaKeys(schema.schema, "").sort();
+    // "excludedSerialNumbers[]" only selects the entries of the list
+    const shown = layoutKeys(schema.layout).filter(
+      (key) => !key.endsWith("[]"),
+    );
+    assert.deepEqual([...shown].sort(), expected);
+  });
+
+  it("disables drag & drop ordering for the lists in the layout", () => {
+    const arrays = [];
+    const walk = (items) =>
+      items.forEach((item) => {
+        if (item && typeof item === "object") {
+          if (item.type === "array") arrays.push(item);
+          if (Array.isArray(item.items)) walk(item.items);
+        }
+      });
+    walk(schema.layout);
+    assert.equal(arrays.length, 3);
+    arrays.forEach((array) =>
+      assert.equal(
+        array.orderable,
+        false,
+        `${array.key} must set "orderable": false`,
+      ),
+    );
+  });
 });

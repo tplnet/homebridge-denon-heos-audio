@@ -27,8 +27,8 @@ jobs:
       - run: npm ci
       - name: Runtime dependencies (fails on any vulnerability)
         run: npm audit --omit=dev --audit-level=low
-      - name: All dependencies incl. dev tools
-        run: npm audit
+      - name: All dependencies incl. dev tools (reported only)
+        run: npm audit || true
 
   homebridge:
     name: Homebridge ${{ matrix.homebridge }} / Node ${{ matrix.node }}

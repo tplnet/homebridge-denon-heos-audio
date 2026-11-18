@@ -34,7 +34,7 @@
       },
       "devices": {
         "title": "Devices",
-        "description": "Add your Denon devices here.",
+        "description": "Devices you add here are set up with exactly these settings. Devices that are added automatically don't need an entry; add one only to change their settings (same serial number).",
         "type": "array",
         "orderable": false,
         "items": {
@@ -43,7 +43,7 @@
             "name": {
               "title": "Name",
               "type": "string",
-              "placeholder": "Give your speaker a name",
+              "placeholder": "Name in the Home app",
               "required": true
             },
             "serialNumber": {
@@ -70,7 +70,7 @@
                 },
                 {
                   "const": "HEOSCLI",
-                  "title": "Heos CLI"
+                  "title": "HEOS CLI"
                 },
                 {
                   "const": "HYBRID",
@@ -87,16 +87,17 @@
               "default": false
             },
             "volumeLimit": {
-              "description": "only has an effect if volume limit is enabled above",
+              "description": "Only has an effect if the volume limit is enabled above.",
               "type": "integer",
               "required": false,
               "minimum": 0,
               "maximum": 99,
-              "default": 99
+              "default": 99,
+              "title": "Volume Limit (%)"
             },
             "volumeStepSize": {
               "title": "Volume Step Size",
-              "description": "Determines how many percentage points the volume is increased or descreased when volume up or down is pressed. This is measured in the device's percentage points - not converted for volume limit.",
+              "description": "How many percentage points the volume buttons of the Remote change the volume. Measured on the device, not converted by the volume limit.",
               "type": "integer",
               "required": false,
               "minimum": 1,
@@ -225,27 +226,6 @@
               }
             }
           }
-        },
-        "sources": {
-          "title": "Selectable playing sources",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "sourceID": {
-                "title": "Source ID",
-                "description": "If you don't know the source ID of the playing source, activate \"playing source logging\" for this device, switch sources manually and look out for the input IDs in the homebridge log.",
-                "type": "string",
-                "required": true
-              },
-              "name": {
-                "title": "Source name",
-                "description": "Choose a display name for this playing source.",
-                "type": "string",
-                "required": true
-              }
-            }
-          }
         }
       },
       "consoleLogEnabled": {
@@ -270,5 +250,96 @@
         "default": "debug"
       }
     }
-  }
+  },
+  "layout": [
+    "deviceDiscovery",
+    "autoAddDiscoveredDevices",
+    {
+      "key": "excludedSerialNumbers",
+      "type": "array",
+      "orderable": false,
+      "items": [
+        "excludedSerialNumbers[]"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Devices (manual setup)",
+      "description": "Optional. Add a device here to set it up manually or to change the settings of an automatically added device.",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "key": "devices",
+          "type": "array",
+          "orderable": false,
+          "items": [
+            {
+              "type": "div",
+              "items": [
+                "devices[].name",
+                "devices[].serialNumber",
+                "devices[].ip",
+                "devices[].controlProtocol",
+                {
+                  "type": "section",
+                  "title": "Volume",
+                  "expandable": true,
+                  "expanded": false,
+                  "items": [
+                    "devices[].volumeLimitEnabled",
+                    "devices[].volumeLimit",
+                    "devices[].volumeStepSize"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "title": "Switching on (HEOS CLI)",
+                  "expandable": true,
+                  "expanded": false,
+                  "items": [
+                    "devices[].powerOnFavorite"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "title": "Inputs",
+                  "expandable": true,
+                  "expanded": false,
+                  "items": [
+                    {
+                      "key": "devices[].inputs",
+                      "type": "array",
+                      "orderable": false,
+                      "items": [
+                        {
+                          "type": "div",
+                          "items": [
+                            "devices[].inputs[].inputID",
+                            "devices[].inputs[].name",
+                            "devices[].inputs[].showInList"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Troubleshooting",
+      "description": "Only needed when looking for errors.",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "consoleLogEnabled",
+        "consoleLogLevel"
+      ]
+    }
+  ]
 }

@@ -2,6 +2,19 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.3.3 (2026-11-18)
+
+### Changed
+
+- Clearer settings form in the Homebridge UI: discovery options at the top, the manual devices in their own expandable section with the settings of each device grouped into *Volume*, *Switching on (HEOS CLI)* and *Inputs*, console log options under *Troubleshooting*. Also in the German form.
+- Settings form texts: "HEOS CLI" spelled correctly, the volume limit field has a title, clearer descriptions of the device list and the volume step size; Marantz devices are no longer left out ("Add your Denon devices here").
+- Removed the unused option "Selectable playing sources" from the settings form (it had no effect).
+- Releases are blocked only by vulnerabilities in the runtime dependencies, like in the other tplnet projects; findings in development tools are reported.
+
+### Fixed
+
+- Console log (`consoleLogEnabled`) without a log level no longer stays silent; it uses `debug`, like the default in the settings form.
+
 ## 1.3.2
 
 ### Fixed

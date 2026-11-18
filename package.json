@@ -67,7 +67,7 @@
     "lint": "eslint . --max-warnings=0",
     "test": "npm run build && node --test \"test/unit/**/*.test.js\"",
     "smoke": "npm run build && node scripts/smoke-test.mjs",
-    "check": "npm audit && npm run lint && npm test && node scripts/smoke-test.mjs",
+    "check": "npm audit --omit=dev --audit-level=low && npm run lint && npm test && node scripts/smoke-test.mjs",
     "prepublishOnly": "npm run lint && npm test",
     "watch": "npm run build && npm link && nodemon",
     "preversion": "npm run check",

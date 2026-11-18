@@ -69,7 +69,7 @@ if (withChecks) {
     );
   }
   checks.push(
-    "No known vulnerabilities (CVEs) in the dependencies (`npm audit`)",
+    "No known vulnerabilities (CVEs) in the runtime dependencies (`npm audit`)",
   );
   checks.push(
     "Unit tests and smoke test with simulated HEOS / AVR Control devices passed",

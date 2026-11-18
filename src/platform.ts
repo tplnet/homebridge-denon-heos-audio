@@ -56,7 +56,7 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private readonly readyToPublish: PlatformAccessory[] = [];
 
   constructor(log: Logger, config: PlatformConfig, api: API) {
-    this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel], PLUGIN_NAME, true) : log;
+    this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel] ?? CustomLogging.logLevelFromString.debug, PLUGIN_NAME, true) : log;
     this.log = new CustomLogging.LoggerPrefixWrapper(this.rawLog, "Platform");
     this.config = config;
     this.api = api;
