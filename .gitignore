@@ -136,3 +136,6 @@ src/playground.ts
 
 # smoke test output
 smoke-test.log
+
+# original icon files (the README uses docs/images/icon.png)
+icon/
