@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tplnet/homebridge-denon-heos-audio/main/docs/images/icon.png" width="128" alt="Homebridge Denon & Marantz HEOS icon">
+</p>
+
 # Homebridge Denon & Marantz HEOS (tplnet)
 
 [![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
