@@ -46,6 +46,7 @@ export class DenonAudioAccessory {
   private readonly volumeLimit: number | undefined;
 
   private readonly configuredInputs: InputConfig[];
+  private powerOnFavorite = 0;
   private configuredInputsByIdentifier: Map<number, ConfiguredInput> = new Map();
   private configuredInputsByInputId: Map<string, ConfiguredInput> = new Map();
   private unknownInput: ConfiguredInput;
@@ -153,8 +154,10 @@ export class DenonAudioAccessory {
       throw new Error("Power on favorite must be 0 (disabled) or the number of a HEOS favorite (1, 2, …)");
     }
     this.denonClient.setPowerOnFavorite?.(powerOnFavorite, (message) => this.log.info(message));
+    this.powerOnFavorite = powerOnFavorite;
 
-    this.configuredInputs = config.inputs ?? [];
+    // entries without input ID or name are ignored (the settings form can add an empty entry by itself)
+    this.configuredInputs = (config.inputs ?? []).filter((input) => typeof input?.inputID === "string" && input.inputID.trim() && typeof input.name === "string" && input.name.trim());
     this.unknownInput = new ConfiguredInput("unknown", "Unknown Input", false, 0, false);
 
     this.log.info("Finished initializing accessory.");
@@ -167,6 +170,34 @@ export class DenonAudioAccessory {
    * configured), sources that are only displayed as current input (hidden), and "Unknown Input".
    * If the device can't list its inputs, all known inputs of the protocol are added (hidden) instead.
    */
+  /**
+   * Checks that the HEOS favorite started when switching on (powerOnFavorite) exists in the HEOS account.
+   * Only for protocols that start a favorite (HEOS CLI); problems are logged as warnings, nothing is changed.
+   */
+  async checkPowerOnFavorite() {
+    if (!this.denonClient.setPowerOnFavorite || !this.denonClient.getFavorites || this.powerOnFavorite === 0) {
+      return;
+    }
+    let favorites: string[];
+    try {
+      favorites = await this.withTimeout(this.denonClient.getFavorites(), DenonAudioAccessory.INPUT_QUERY_TIMEOUT);
+    } catch (error) {
+      this.log.debug(`Could not read the HEOS favorites (${error instanceof Error ? error.message : error}).`);
+      return;
+    }
+    if (favorites.length === 0) {
+      this.log.warn(
+        `There are no HEOS favorites. Switching on without a source can't start favorite ${this.powerOnFavorite}: add a favorite in the HEOS app (Music → Favorites).`,
+      );
+    } else if (this.powerOnFavorite > favorites.length) {
+      this.log.warn(
+        `Power on favorite ${this.powerOnFavorite} doesn't exist: the HEOS app has ${favorites.length} favorite(s). Choose a number from 1 to ${favorites.length} in the settings (or 0 to disable it).`,
+      );
+    } else {
+      this.log.debug(`Switching on without a source starts HEOS favorite ${this.powerOnFavorite}: ${favorites[this.powerOnFavorite - 1]}`);
+    }
+  }
+
   async setupInputs() {
     let deviceInputs: DefaultInput[] | undefined;
     try {
@@ -224,6 +255,8 @@ export class DenonAudioAccessory {
 
     const shown = inputs.filter((input) => input.showInList).map((input) => input.displayName);
     this.log.info(`Added ${inputs.length} input services (shown in the input list: ${shown.join(", ") || "none"}).`);
+    // not awaited: must not delay publishing the accessory
+    void this.checkPowerOnFavorite();
   }
 
   private withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {

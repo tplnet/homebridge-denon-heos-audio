@@ -245,7 +245,7 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 | `devices[].volumeStepSize` | no | `2` | 1–10. Volume change per press of the volume buttons in the Remote. |
 | `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (1 = first favorite in the HEOS app, 0 = disabled). The favorite must exist in the HEOS app. Also used for automatically added devices. |
 | `devices[].inputs` | no | `[]` | Inputs to show in the Home app, see [Inputs](#inputs). |
-| `devices[].inputs[].inputID` | yes | | Input ID (depends on the protocol, see below). |
+| `devices[].inputs[].inputID` | yes | | Input ID (depends on the protocol, see below). Entries without input ID or name are ignored. |
 | `devices[].inputs[].name` | yes | | Name shown in the Home app. |
 | `devices[].inputs[].showInList` | no | `true` | Hide the input from the input list without removing it. |
 | `consoleLogEnabled` | no | `false` | Writes the plugin log directly to the console (debugging only). |

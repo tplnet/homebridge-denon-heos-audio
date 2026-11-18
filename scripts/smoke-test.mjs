@@ -50,6 +50,12 @@ function startHeos() {
             // like the real devices: first "command under process", then the result
             ok(`command under process&sid=${sid}`);
             const player = players.find((p) => String(p.pid) === sid);
+            if (sid === "1028") {
+              // HEOS favorites
+              const favorites = [{ container: "no", mid: "s1", type: "station", playable: "yes", name: "Radio One" }];
+              setTimeout(() => ok(`sid=1028&returned=1&count=1`, favorites), 100);
+              continue;
+            }
             setTimeout(() => {
               ok(`sid=${sid}&returned=1&count=1`, [{ container: "no", mid: "inputs/aux_in_1", type: "station", playable: "yes", name: `${player?.name} - AUX In` }]);
             }, 300);

@@ -30,7 +30,8 @@
         "items": {
           "type": "string",
           "title": "Serial Number"
-        }
+        },
+        "listItems": 0
       },
       "devices": {
         "title": "Devices",
@@ -106,7 +107,7 @@
             },
             "powerOnFavorite": {
               "title": "Power On Favorite",
-              "description": "HEOS CLI only: if a speaker has nothing to resume when it is switched on, this HEOS favorite is started (1 = first favorite in the HEOS app). 0 = disabled.",
+              "description": "HEOS CLI only: if a speaker has nothing to resume when it is switched on, this HEOS favorite is started (1 = first favorite in the HEOS app). 0 = disabled. At startup the plugin warns if the favorite doesn't exist.",
               "type": "integer",
               "required": false,
               "minimum": 0,
@@ -129,7 +130,7 @@
                     "title": "Input ID",
                     "type": "string",
                     "placeholder": "AUX1",
-                    "required": true,
+                    "required": false,
                     "typeahead": {
                       "source": [
                         "ANALOG1",
@@ -212,8 +213,7 @@
                     "title": "Display Name",
                     "type": "string",
                     "placeholder": "Aux",
-                    "required": true,
-                    "minLength": 1
+                    "required": false
                   },
                   "showInList": {
                     "title": "Show in Input List",
@@ -260,7 +260,8 @@
       "orderable": false,
       "items": [
         "excludedSerialNumbers[]"
-      ]
+      ],
+      "listItems": 0
     },
     {
       "type": "fieldset",
@@ -298,7 +299,10 @@
                   "expandable": true,
                   "expanded": false,
                   "items": [
-                    "devices[].powerOnFavorite"
+                    {
+                      "key": "devices[].powerOnFavorite",
+                      "type": "number"
+                    }
                   ]
                 },
                 {
@@ -320,13 +324,15 @@
                             "devices[].inputs[].showInList"
                           ]
                         }
-                      ]
+                      ],
+                      "listItems": 0
                     }
                   ]
                 }
               ]
             }
-          ]
+          ],
+          "listItems": 0
         }
       ]
     },

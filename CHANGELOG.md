@@ -2,6 +2,17 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.3.4 (2026-11-18)
+
+### Fixed
+
+- The settings form no longer shows "Config validation failed" because of an empty entry it adds by itself (e.g. an empty input). Lists start empty, and inputs without input ID or name are ignored by the plugin.
+
+### Changed
+
+- *Power On Favorite* is a number field instead of a slider in the settings form.
+- At startup the plugin checks the power on favorite against the favorites in the HEOS app (HEOS CLI devices) and warns if it doesn't exist or if there are no favorites. The name of the favorite is shown in the debug log.
+
 ## 1.3.3 (2026-11-18)
 
 ### Changed

@@ -170,6 +170,15 @@ export class DenonClientHeosCli extends DenonClient {
         EXP_RES: /step=(\d+)/,
       },
     },
+    FAVORITES: {
+      // HEOS favorites of the signed-in HEOS account (source id 1028), in the order of the preset numbers
+      GET: {
+        COMMAND: "browse/browse",
+        PARAMS: "?sid=1028",
+        EXP_RES: /returned=(\d+)/,
+        TIMEOUT: 6000,
+      },
+    },
     INPUT_SOURCES: {
       // inputs of this player: the AUX input source (sid=1027) contains one entry per player, with sid = pid
       GET: {
@@ -726,6 +735,19 @@ export class DenonClientHeosCli extends DenonClient {
     }
 
     return payload.sid.toString();
+  }
+
+  public async getFavorites(): Promise<string[]> {
+    const payload_str = await this.sendCommand(DenonClientHeosCli.PROTOCOL.FAVORITES, CommandMode.GET, { passPayload: true });
+    return DenonClientHeosCli.favoritesFromPayload(payload_str);
+  }
+
+  public static favoritesFromPayload(payload_str: string): string[] {
+    const payload = JSON.parse(payload_str);
+    if (!Array.isArray(payload)) {
+      throw new InvalidResponseException("Favorite list is not an array!", undefined, payload_str);
+    }
+    return payload.map((item, index) => (typeof item?.name === "string" && item.name.trim() ? item.name.trim() : `Favorite ${index + 1}`));
   }
 
   public async getInputSources(): Promise<DefaultInput[]> {

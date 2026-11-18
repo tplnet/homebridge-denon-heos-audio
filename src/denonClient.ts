@@ -70,6 +70,10 @@ export interface IDenonClient {
    * Not used by protocols with a real power state.
    */
   setPowerOnFavorite?(preset: number, infoLog?: (message: string) => void): void;
+  /**
+   * Names of the HEOS favorites of the HEOS account, in the order of the favorite numbers (1, 2, …).
+   */
+  getFavorites?(): Promise<string[]>;
 }
 
 export abstract class DenonClient implements IDenonClient {
