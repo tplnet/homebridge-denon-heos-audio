@@ -243,7 +243,8 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 | `devices[].volumeLimitEnabled` | no | `false` | Enables the volume limit. |
 | `devices[].volumeLimit` | no | `99` | 0–99. With a limit, 100 % in the Home app equals this value on the device. |
 | `devices[].volumeStepSize` | no | `2` | 1–10. Volume change per press of the volume buttons in the Remote. |
-| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (1 = first favorite in the HEOS app, 0 = disabled). The favorite must exist in the HEOS app. Also used for automatically added devices. |
+| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (position in the favorite list of the HEOS app, *Music → Favorites*: 1 = first, up to 200; 0 = disabled). The favorite must exist in the HEOS app. Also used for automatically added devices. |
+| `devices[].powerOnQuickSelect` | no | `0` | HEOS CLI only: Quick Select slot of the device (the numbered buttons, e.g. 1–3 on a Denon Home 150, 1–6 on a Denon Home 300) that is started instead of the HEOS favorite when the speaker has nothing to resume. 0 = use the HEOS favorite. |
 | `devices[].inputs` | no | `[]` | Inputs to show in the Home app, see [Inputs](#inputs). |
 | `devices[].inputs[].inputID` | yes | | Input ID (depends on the protocol, see below). Entries without input ID or name are ignored. |
 | `devices[].inputs[].name` | yes | | Name shown in the Home app. |
@@ -321,7 +322,7 @@ The serial number doesn't match. Use the value from device discovery exactly as 
 SSDP doesn't cross VLANs or guest networks. Docker installations need `network_mode: host`.
 
 **A speaker doesn't switch on (HEOS CLI).**
-Switching on starts playback. If the speaker has nothing to resume, the plugin starts the HEOS favorite set in `powerOnFavorite` (default: the first one). Make sure at least one favorite exists in the HEOS app (*Music → Favorites*). The debug log shows `starting HEOS favorite …` when this happens.
+Switching on starts playback. If the speaker has nothing to resume, the plugin starts the HEOS favorite set in `powerOnFavorite` (default: the first one) or, if set, the Quick Select slot in `powerOnQuickSelect`. Make sure the favorite exists in the HEOS app (*Music → Favorites*) or the Quick Select slot is stored on the device; the plugin warns at startup if not. The log shows `starting HEOS favorite …` / `starting Quick Select …` when this happens.
 
 **The Marantz receiver doesn't react to AVR Control commands.**
 Enable *Network Control* (sometimes called *IP Control*) in the receiver's network settings so it stays reachable in standby.

@@ -35,32 +35,67 @@ describe("power on favorite check", () => {
 
   it("warns if the favorite doesn't exist", async () => {
     const { handler, logs } = createAccessory(3, ["Radio One", "Jazz"]);
-    await handler.checkPowerOnFavorite();
+    await handler.checkPowerOnSource();
     assert.equal(logs.warn.length, 1);
     assert.match(logs.warn[0], /Power on favorite 3 doesn't exist: the HEOS app has 2 favorite\(s\)/);
   });
 
   it("warns if there are no favorites", async () => {
     const { handler, logs } = createAccessory(1, []);
-    await handler.checkPowerOnFavorite();
+    await handler.checkPowerOnSource();
     assert.match(logs.warn[0], /There are no HEOS favorites/);
   });
 
   it("names the favorite in the debug log if it exists", async () => {
     const { handler, logs } = createAccessory(2, ["Radio One", "Jazz"]);
-    await handler.checkPowerOnFavorite();
+    await handler.checkPowerOnSource();
     assert.equal(logs.warn.length, 0);
     assert.ok(logs.debug.some((m) => m.includes("starts HEOS favorite 2: Jazz")));
   });
 
   it("does nothing when disabled and only logs to debug if the favorites can't be read", async () => {
     const disabled = createAccessory(0, []);
-    await disabled.handler.checkPowerOnFavorite();
+    await disabled.handler.checkPowerOnSource();
     assert.equal(disabled.logs.warn.length, 0);
 
     const failing = createAccessory(1, new Error("User not logged in"));
-    await failing.handler.checkPowerOnFavorite();
+    await failing.handler.checkPowerOnSource();
     assert.equal(failing.logs.warn.length, 0);
     assert.ok(failing.logs.debug.some((m) => m.includes("User not logged in")));
+  });
+});
+
+describe("power on Quick Select check", () => {
+  function createQuickSelectAccessory(slot, slots) {
+    const logs = { warn: [], debug: [] };
+    const log = { debug: (m) => logs.debug.push(m), info() {}, success() {}, warn: (m) => logs.warn.push(m), error() {}, log() {}, prefix: "test" };
+    const platform = { api: { hap }, Service: hap.Service, Characteristic: hap.Characteristic };
+    const accessory = new hap.Accessory("Test Speaker", hap.uuid.generate(`quickselect-test-${slot}`));
+    const handler = new DenonAudioAccessory(
+      platform,
+      accessory,
+      { name: "Test Speaker", serialNumber: "S", ip: "127.0.0.1", controlProtocol: "HEOSCLI", powerOnQuickSelect: slot },
+      log,
+    );
+    handler.denonClient = { setPowerOnFavorite() {}, getFavorites: async () => [], getQuickSelects: async () => slots };
+    return { handler, logs };
+  }
+
+  it("warns if the slot doesn't exist on the device (e.g. slot 5 on a Denon Home 150)", async () => {
+    const { handler, logs } = createQuickSelectAccessory(5, ["Radio", "TV", "Spotify"]);
+    await handler.checkPowerOnSource();
+    assert.equal(logs.warn.length, 1);
+    assert.match(logs.warn[0], /Quick Select 5 doesn't exist: the device has 3 Quick Select slot\(s\)/);
+  });
+
+  it("names the slot in the debug log and doesn't check the favorites", async () => {
+    const { handler, logs } = createQuickSelectAccessory(2, ["Radio", "TV", "Spotify"]);
+    await handler.checkPowerOnSource();
+    assert.equal(logs.warn.length, 0, "no warning about missing favorites");
+    assert.ok(logs.debug.some((m) => m.includes("starts Quick Select 2: TV")));
+  });
+
+  it("rejects slots outside 0-6", () => {
+    assert.throws(() => createQuickSelectAccessory(7, []), /Quick Select/);
   });
 });

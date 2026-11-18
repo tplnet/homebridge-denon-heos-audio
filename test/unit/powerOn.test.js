@@ -147,3 +147,32 @@ describe("HEOS power on", () => {
     assert.deepEqual(powerUpdates, [false]);
   });
 });
+
+describe("HEOS power on with Quick Select", () => {
+  it("starts the Quick Select slot instead of the favorite", async () => {
+    const infos = [];
+    const client = new DenonClientHeosCli("SERIAL", "Test", "127.0.0.1", 200, 200, () => {});
+    client.player_id = PID;
+    client.setPowerOnFavorite(1, (message) => infos.push(message));
+    client.setPowerOnQuickSelect(2);
+    const written = [];
+    client.socket = {
+      write: (data) => {
+        const command = data.replace("heos://", "").replace("\r\n", "");
+        written.push(command);
+        const [name] = command.split("?");
+        const reply =
+          name === "player/get_play_state"
+            ? { heos: { command: name, result: "success", message: `pid=${PID}&state=unknown` } }
+            : { heos: { command: name, result: "success", message: `pid=${PID}&id=${command.match(/id=(\d+)/)?.[1]}` } };
+        setImmediate(() => client.dataHandler(Buffer.from(heos(reply))));
+        return true;
+      },
+      destroy() {},
+    };
+    assert.equal(await client.setPower(true), true);
+    assert.equal(written.at(-1), `player/play_quickselect?pid=${PID}&id=2`);
+    assert.deepEqual(infos, ["Nothing to resume, starting Quick Select 2."]);
+    client.socket = undefined;
+  });
+});

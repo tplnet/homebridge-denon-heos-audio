@@ -100,6 +100,24 @@ export class DenonClientHeosCli extends DenonClient {
         TIMEOUT: 6000,
       },
     },
+    PLAY_QUICKSELECT: {
+      // plays a Quick Select slot stored on the device (1-6, depending on the model)
+      SET: {
+        COMMAND: "player/play_quickselect",
+        PARAMS: "?pid=[PID]&id=[VALUE]",
+        EXP_RES: /id=(\d+)/,
+        TIMEOUT: 6000,
+      },
+    },
+    QUICKSELECTS: {
+      // Quick Select slots of the device with their names
+      GET: {
+        COMMAND: "player/get_quickselects",
+        PARAMS: "?pid=[PID]",
+        EXP_RES: /pid=(-?\d+)/,
+        TIMEOUT: 6000,
+      },
+    },
     PLAY_NEXT: {
       SET: {
         COMMAND: "player/play_next",
@@ -288,6 +306,7 @@ export class DenonClientHeosCli extends DenonClient {
   private player_id: number | undefined;
   /** HEOS favorite (1, 2, …) that is started when switching on without something to resume; 0 = disabled. */
   private powerOnFavorite = 1;
+  private powerOnQuickSelect = 0;
   // radio streams may need a few seconds of buffering before the device reports "play"
   private static readonly PLAY_VERIFY_CHECKS = 8;
   private playVerifyIntervalMs = 1000;
@@ -551,6 +570,24 @@ export class DenonClientHeosCli extends DenonClient {
     }
   }
 
+  /** Quick Select slot started instead of the HEOS favorite when there is nothing to resume (0 = use the favorite). */
+  public setPowerOnQuickSelect(slot: number) {
+    this.powerOnQuickSelect = slot;
+  }
+
+  /** What is started when switching on finds nothing to resume: a Quick Select slot or a HEOS favorite. */
+  private powerOnFallback(): { label: string; start: () => Promise<boolean> } | undefined {
+    if (this.powerOnQuickSelect > 0) {
+      const slot = this.powerOnQuickSelect;
+      return { label: `Quick Select ${slot}`, start: () => this.playQuickSelect(slot) };
+    }
+    if (this.powerOnFavorite > 0) {
+      const preset = this.powerOnFavorite;
+      return { label: `HEOS favorite ${preset}`, start: () => this.playFavorite(preset) };
+    }
+    return undefined;
+  }
+
   /**
    * Switching on means starting playback. If there is nothing to resume (play state "unknown", e.g. no source
    * since the speaker was started) or the device refuses to play, the configured HEOS favorite is started instead.
@@ -574,29 +611,29 @@ export class DenonClientHeosCli extends DenonClient {
       return true;
     }
 
-    const favorite = this.powerOnFavorite;
-    if (favorite > 0) {
+    const fallback = this.powerOnFallback();
+    if (fallback) {
       if (rawState === DenonClientHeosCli.PROTOCOL.PLAY_STATE.VALUES.UNKNOWN.VALUE) {
-        this.infoLog(`Nothing to resume, starting HEOS favorite ${favorite}.`);
-        return this.playFavorite(favorite);
+        this.infoLog(`Nothing to resume, starting ${fallback.label}.`);
+        return fallback.start();
       }
       if (await this.hasNoMedia()) {
-        this.infoLog(`Nothing to resume (no current media), starting HEOS favorite ${favorite}.`);
-        return this.playFavorite(favorite);
+        this.infoLog(`Nothing to resume (no current media), starting ${fallback.label}.`);
+        return fallback.start();
       }
     }
 
     try {
       await this.setPlaying(Playing.PLAY);
     } catch (error) {
-      if (!(error instanceof CommandFailedException) || favorite <= 0) {
+      if (!(error instanceof CommandFailedException) || !fallback) {
         throw error;
       }
-      this.infoLog(`The speaker refused to resume playback, starting HEOS favorite ${favorite}.`);
-      return this.playFavorite(favorite);
+      this.infoLog(`The speaker refused to resume playback, starting ${fallback.label}.`);
+      return fallback.start();
     }
 
-    if (favorite <= 0) {
+    if (!fallback) {
       return true;
     }
 
@@ -607,8 +644,8 @@ export class DenonClientHeosCli extends DenonClient {
         return true;
       }
     }
-    this.infoLog(`Playback did not start, starting HEOS favorite ${favorite}.`);
-    return this.playFavorite(favorite);
+    this.infoLog(`Playback did not start, starting ${fallback.label}.`);
+    return fallback.start();
   }
 
   /**
@@ -625,6 +662,20 @@ export class DenonClientHeosCli extends DenonClient {
       this.debugLog("Could not read the current media:", error instanceof Error ? error.message : error);
       return false;
     }
+  }
+
+  private async playQuickSelect(slot: number): Promise<boolean> {
+    await this.sendCommand(DenonClientHeosCli.PROTOCOL.PLAY_QUICKSELECT, CommandMode.SET, { value: slot.toString() });
+    return true;
+  }
+
+  public async getQuickSelects(): Promise<string[]> {
+    const payload_str = await this.sendCommand(DenonClientHeosCli.PROTOCOL.QUICKSELECTS, CommandMode.GET, { passPayload: true });
+    const payload = JSON.parse(payload_str);
+    if (!Array.isArray(payload)) {
+      throw new InvalidResponseException("Quick Select list is not an array!", undefined, payload_str);
+    }
+    return payload.map((item, index) => (typeof item?.name === "string" && item.name.trim() ? item.name.trim() : `Quick Select ${item?.id ?? index + 1}`));
   }
 
   private async playFavorite(preset: number): Promise<boolean> {

@@ -2,6 +2,16 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.4.0 (2026-11-18)
+
+### Added
+
+- Switching on can start a **Quick Select** slot of the device (the numbered buttons, e.g. 1–3 on a Denon Home 150, 1–6 on a Denon Home 300) instead of a HEOS favorite when the speaker has nothing to resume: new option *Power On Quick Select* (`powerOnQuickSelect`, HEOS CLI only, 0 = use the HEOS favorite). At startup the plugin warns if the slot doesn't exist on the device; the debug log shows its name.
+
+### Changed
+
+- *Power On Favorite* accepts up to 200, the maximum number of favorites in the HEOS app. Its description explains that the number is the position in the favorite list of the HEOS app (*Music → Favorites*).
+
 ## 1.3.4 (2026-11-18)
 
 ### Fixed

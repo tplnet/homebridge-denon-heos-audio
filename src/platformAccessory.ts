@@ -47,6 +47,7 @@ export class DenonAudioAccessory {
 
   private readonly configuredInputs: InputConfig[];
   private powerOnFavorite = 0;
+  private powerOnQuickSelect = 0;
   private configuredInputsByIdentifier: Map<number, ConfiguredInput> = new Map();
   private configuredInputsByInputId: Map<string, ConfiguredInput> = new Map();
   private unknownInput: ConfiguredInput;
@@ -155,6 +156,12 @@ export class DenonAudioAccessory {
     }
     this.denonClient.setPowerOnFavorite?.(powerOnFavorite, (message) => this.log.info(message));
     this.powerOnFavorite = powerOnFavorite;
+    const powerOnQuickSelect = config.powerOnQuickSelect ?? 0;
+    if (!Number.isInteger(powerOnQuickSelect) || powerOnQuickSelect < 0 || powerOnQuickSelect > 6) {
+      throw new Error("Power on Quick Select must be 0 (use the HEOS favorite) or a Quick Select slot from 1 to 6");
+    }
+    this.denonClient.setPowerOnQuickSelect?.(powerOnQuickSelect);
+    this.powerOnQuickSelect = powerOnQuickSelect;
 
     // entries without input ID or name are ignored (the settings form can add an empty entry by itself)
     this.configuredInputs = (config.inputs ?? []).filter((input) => typeof input?.inputID === "string" && input.inputID.trim() && typeof input.name === "string" && input.name.trim());
@@ -171,11 +178,19 @@ export class DenonAudioAccessory {
    * If the device can't list its inputs, all known inputs of the protocol are added (hidden) instead.
    */
   /**
-   * Checks that the HEOS favorite started when switching on (powerOnFavorite) exists in the HEOS account.
+   * Checks that what is started when switching on exists: the Quick Select slot (powerOnQuickSelect) on the device
+   * or the HEOS favorite (powerOnFavorite) in the HEOS account.
    * Only for protocols that start a favorite (HEOS CLI); problems are logged as warnings, nothing is changed.
    */
-  async checkPowerOnFavorite() {
-    if (!this.denonClient.setPowerOnFavorite || !this.denonClient.getFavorites || this.powerOnFavorite === 0) {
+  async checkPowerOnSource() {
+    if (!this.denonClient.setPowerOnFavorite) {
+      return;
+    }
+    if (this.powerOnQuickSelect > 0) {
+      await this.checkPowerOnQuickSelect();
+      return;
+    }
+    if (!this.denonClient.getFavorites || this.powerOnFavorite === 0) {
       return;
     }
     let favorites: string[];
@@ -195,6 +210,27 @@ export class DenonAudioAccessory {
       );
     } else {
       this.log.debug(`Switching on without a source starts HEOS favorite ${this.powerOnFavorite}: ${favorites[this.powerOnFavorite - 1]}`);
+    }
+  }
+
+  /** Checks that the Quick Select slot started when switching on exists on the device. */
+  private async checkPowerOnQuickSelect() {
+    if (!this.denonClient.getQuickSelects) {
+      return;
+    }
+    let slots: string[];
+    try {
+      slots = await this.withTimeout(this.denonClient.getQuickSelects(), DenonAudioAccessory.INPUT_QUERY_TIMEOUT);
+    } catch (error) {
+      this.log.debug(`Could not read the Quick Select slots (${error instanceof Error ? error.message : error}).`);
+      return;
+    }
+    if (this.powerOnQuickSelect > slots.length) {
+      this.log.warn(
+        `Power on Quick Select ${this.powerOnQuickSelect} doesn't exist: the device has ${slots.length} Quick Select slot(s). Choose a slot from 1 to ${slots.length} in the settings (or 0 to start the HEOS favorite instead).`,
+      );
+    } else {
+      this.log.debug(`Switching on without a source starts Quick Select ${this.powerOnQuickSelect}: ${slots[this.powerOnQuickSelect - 1]}`);
     }
   }
 
@@ -256,7 +292,7 @@ export class DenonAudioAccessory {
     const shown = inputs.filter((input) => input.showInList).map((input) => input.displayName);
     this.log.info(`Added ${inputs.length} input services (shown in the input list: ${shown.join(", ") || "none"}).`);
     // not awaited: must not delay publishing the accessory
-    void this.checkPowerOnFavorite();
+    void this.checkPowerOnSource();
   }
 
   private withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {

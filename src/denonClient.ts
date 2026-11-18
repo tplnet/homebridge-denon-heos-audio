@@ -74,6 +74,14 @@ export interface IDenonClient {
    * Names of the HEOS favorites of the HEOS account, in the order of the favorite numbers (1, 2, …).
    */
   getFavorites?(): Promise<string[]>;
+  /**
+   * Quick Select slot that is started instead of the HEOS favorite when switching on finds nothing to resume (0 = favorite).
+   */
+  setPowerOnQuickSelect?(slot: number): void;
+  /**
+   * Names of the Quick Select slots of the device, in the order of the slot numbers (1, 2, …).
+   */
+  getQuickSelects?(): Promise<string[]>;
 }
 
 export abstract class DenonClient implements IDenonClient {
