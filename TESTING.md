@@ -102,6 +102,9 @@ Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control 
 
 - [x] With the UI language set to Deutsch, the plugin settings form is shown in German (1.2.6).
 - [x] Dropdowns in the settings form don't make the form move with the mouse (`orderable: false`).
+- [x] The settings form opens and saves without "Config validation failed" (1.3.4).
+- [ ] A power on favorite that doesn't exist (e.g. 150) is reported as a warning at startup (1.3.4).
+- [ ] *Power On Quick Select* on a Denon Home 150: switching on with nothing to resume starts the slot (log: `starting Quick Select …`); slot 5 is reported as missing at startup (1.4.0).
 
 ## Reporting
 
