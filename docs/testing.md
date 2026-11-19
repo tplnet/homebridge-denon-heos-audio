@@ -64,17 +64,16 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 | Tile doesn't jump back after switching on / off (1.2.2) | ✅ | ✅ | ☐ | ✅ |
 | Power on / off from the Home app | ✅ (Office, Kids Room; resumes Spotify) | ✅ | ☐ | ✅ |
 | Power state updates when changed on the device / in the HEOS app | ✅ (pause shows *Off*) | ✅ | ☐ | ✅ |
-| Volume slider sets the volume | ✅ | ✅ | ☐ | ✅ |
-| Volume changed on the device updates the slider | ☐ | ☐ | ☐ | ☐ |
-| Remote: volume buttons (`volumeStepSize`) | ☐ | ☐ | ☐ | ☐ |
+| Volume changed on the device / in the HEOS app is shown in apps that show all accessory settings (Eve, Controller for HomeKit; the Home app has no volume slider) | ☐ | ☐ | ☐ | ☐ |
+| Remote: volume buttons (`volumeStepSize`) | ✅ | ✅ | ☐ | ✅ |
 | One tile per device in the Home app, volume via the Control Center remote (1.2.5) | ✅ | ☐ | ☐ | ☐ |
 | Volume limit: 100 % in Home = limit on device | ✅ | ☐ | ☐ | ☐ |
 | Volume limit 0 keeps the device silent | ☐ | ☐ | ☐ | ☐ |
 | Mute / unmute | ✅ | ✅ | ☐ | ✅ |
 | Switch input from the Home app | – | – | ☐ | ✅ |
 | Input changed on the receiver shows up in Home (Hybrid, 1.5.1-beta.7) | – | – | ☐ | ✅ (1.5.1-beta.7) |
-| Input changed in the HEOS app shows up in Home | ☐ | ☐ | ☐ | ☐ |
-| Streaming source (Spotify / AirPlay) is shown as current input | ☐ | ☐ | ☐ | ☐ |
+| Input changed in the HEOS app shows up in Home | – | – | ☐ | ✅ (1.5.1-beta.8) |
+| Streaming source (Spotify / AirPlay) is shown as current input | ☐ | ☐ | ☐ | ✅ (1.5.1-beta.8) |
 | Remote: play / pause | ✅ | ✅ | ☐ | ✅ |
 | Remote: next / previous track (radio / input: info in the log, 1.5.1-beta.7) | ✅ | ✅ | ☐ | ✅ |
 
@@ -92,7 +91,7 @@ Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control 
 
 - [x] Unplug a device for a minute and plug it back in. It becomes responsive again without restarting Homebridge (Denon Home 150, 1.5.1-beta.5).
 - [ ] Restart the router / Wi-Fi. All devices reconnect.
-- [ ] Rapidly move the volume slider and press play/pause several times. Homebridge must not crash.
+- [ ] Rapidly press the volume buttons of the remote and play/pause several times. Homebridge must not crash.
 - [x] Control the same device from the HEOS app while the Home app is open. States stay in sync (Home 150 / 250: start / stop, 1.5.1-beta.5).
 - [ ] Leave Homebridge running for 24 h and check the log for errors or warnings.
 - [ ] Device discovery is still running after 24 h (no `Device discovery stopped` without a following restart). With `autoAddDiscoveredDevices`, a speaker switched on hours after the Homebridge start is added.
@@ -108,7 +107,7 @@ Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control 
 - [x] With the UI language set to Deutsch, the plugin settings form is shown in German (1.2.6).
 - [x] Dropdowns in the settings form don't make the form move with the mouse (`orderable: false`).
 - [x] The settings form opens and saves without "Config validation failed" (1.3.4).
-- [ ] *Plugins* → ⋮ → *Plugin Logs* shows the log of this plugin, also later than right after a restart (name set in the settings, 1.5.1-beta.8).
+- [x] *Plugins* → ⋮ → *Plugin Logs* shows the log of this plugin, also later than right after a restart (name set in the settings, 1.5.1-beta.8).
 - [x] A power on favorite that doesn't exist (e.g. 150) is reported as a warning at startup (1.3.4, verified with 1.5.1-beta.5).
 - [x] *Power On Quick Select* slot 5 on a Denon Home 150 is reported as missing at startup (the device reports 3 slots) (1.4.0).
 - [x] The Quick Select command (`player/play_quickselect`) is accepted by a Denon Home 150 (`result: success`) (1.4.0).

@@ -2,6 +2,26 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.5.1 (2026-11-19)
+
+Combines the betas 1.5.1-beta.1 to 1.5.1-beta.8.
+
+### Fixed
+
+- Hybrid (e.g. Marantz Cinema 60): an input changed on the receiver itself (front panel, remote, HDMI-CEC) now shows up in the Home app. HEOS doesn't report such a change, AVR Control does; the plugin maps the AVR Control input (e.g. `AUX1`, `BD`, `GAME1`) to the device's HEOS input. For music sources (network, Bluetooth) the current source is read from HEOS.
+- Homebridge UI: the window *Plugin Logs* stayed empty except right after a restart. The settings form now has a *Name* field (default `HEOS Multiroom-Audio`), which the UI uses to find the lines of this plugin; **open the plugin settings and save them once**. Without a name the plugin logs a hint at startup. The console log (`consoleLogEnabled`) uses the same prefix in the format the UI recognizes.
+- *Next* / *previous track* on a source without tracks (radio station, input): the device refuses the command; this is now an info message in the log instead of an error with a stack trace.
+
+### Changed
+
+- Settings form and documentation explain the order when switching on a HEOS CLI speaker with nothing to resume: the *Power On Quick Select* slot takes precedence over the *Power On Favorite*; with both at 0 nothing is started.
+- Shorter README, like in the other tplnet projects. The details moved into `docs/` on GitHub: [configuration](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/configuration.md), [Apple Home](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/apple-home.md) (incl. the remote buttons without function), [troubleshooting](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/troubleshooting.md), development, releasing and testing (with the results of the device tests).
+
+### Security
+
+- New **malware scan**, like in the other tplnet projects: weekly, on every dependency change and before every release, [OSV-Scanner](https://google.github.io/osv-scanner/) checks all dependencies against the list of known malicious npm packages and [ClamAV](https://www.clamav.net/) scans the package as it is published and all installed dependencies. Any finding stops the release.
+- All workflows install the dependencies with `npm ci --ignore-scripts`, so install scripts of dependencies never run in the build.
+
 ## 1.5.1-beta.8 (2026-11-19)
 
 ### Fixed
