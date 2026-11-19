@@ -2,7 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
-## 1.5.1-beta.4 (2026-11-19)
+## 1.5.1-beta.5 (2026-11-19)
+
+### Fixed
+
+- Malware scan in the release run: with npm 12 the output of `npm pack --json` changed (object instead of list), so the scan couldn't find the package file and the release of 1.5.1-beta.4 stopped before publishing. The scan now takes the packed file itself. Contains the changes of the unpublished betas 1.5.1-beta.2 to 1.5.1-beta.4.
+
+No changes to the plugin code.
+
+## 1.5.1-beta.4 (2026-11-19, not published)
 
 ### Fixed
 
