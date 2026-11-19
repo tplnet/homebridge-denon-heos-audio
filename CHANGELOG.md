@@ -2,7 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
-## 1.5.1-beta.3 (2026-11-19)
+## 1.5.1-beta.4 (2026-11-19)
+
+### Fixed
+
+- Malware scan: faster and within the time limit of the release run – no full download of the virus signatures during the ClamAV installation (the cached copy only gets a small update), ClamAV scans in parallel processes. The release of 1.5.1-beta.3 stopped before publishing; this beta contains its changes and those of 1.5.1-beta.2.
+
+No changes to the plugin code.
+
+## 1.5.1-beta.3 (2026-11-19, not published)
 
 ### Fixed
 
