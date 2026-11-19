@@ -2,7 +2,7 @@
   "name": "@tplnet/homebridge-heos-multiroom-audio",
   "displayName": "Homebridge HEOS Multiroom-Audio (tplnet)",
   "type": "module",
-  "version": "1.5.1-beta.8",
+  "version": "1.5.1",
   "description": "HEOS multiroom audio in Apple Home: Denon and Marantz HEOS speakers, amplifiers and AV receivers (Denon Home, Home Amp, Marantz Cinema, Denon AVR, CEOL). Power, volume, inputs, play/pause, automatic discovery.",
   "author": "tplnet",
   "contributors": [
