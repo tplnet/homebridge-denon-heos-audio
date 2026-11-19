@@ -2,6 +2,19 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.5.0 (2026-11-19)
+
+First regular version under the new name. Contains the changes of 1.4.1-beta.1 and 1.5.0-beta.1.
+
+### Changed
+
+- **New name: "Homebridge HEOS Multiroom-Audio (tplnet)"**, npm package `@tplnet/homebridge-heos-multiroom-audio` (before: `@tplnet/homebridge-denon-heos-audio`), repository `tplnet/homebridge-heos-multiroom-audio`. HEOS is the multiroom audio system of Denon and Marantz; the new name describes it better. Switching: uninstall the old package in the terminal and install the new one (see README, "Switching from @tplnet/homebridge-denon-heos-audio"). The platform name `DenonHeosAudio` and the configuration stay the same, the devices keep their pairing in Apple Home.
+- New features and fixes are published as a **beta** first (npm dist-tag `beta`, offered by the Homebridge UI to users who run a beta) and become a regular version after they have been tested. The README explains how to install a beta and how to go back.
+- npm description and keywords: more search terms (multiroom, multi-room, Denon HEOS, Marantz HEOS, Denon AVR, Marantz AVR, Siri, …).
+- README: plugin icon at the top; troubleshooting: the port range is shared with other plugins (e.g. cameras), adding one moves the ports once (restart the home hub). SECURITY.md: reports are handled on a best-effort basis.
+
+No changes to the functions of the plugin.
+
 ## 1.5.0-beta.1 (2026-11-19)
 
 ### Changed
