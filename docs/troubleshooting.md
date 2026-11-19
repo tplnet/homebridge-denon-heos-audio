@@ -41,7 +41,7 @@ Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then re
 
 ## Debug log
 
-Enable debug logging for the child bridge of this plugin (Homebridge UI → *Plugins* → ⋮ on this plugin → *Bridge Settings* → *Debug*), or for the whole Homebridge, or set `consoleLogEnabled`. The debug log shows every command sent to the devices and every answer, the supported protocols of each discovered device and the inputs, favorites and Quick Select slots it reports.
+Enable debug logging for the child bridge of this plugin (Homebridge UI → *Plugins* → ⋮ on this plugin → *Child Bridge Config* → *Debug Mode*, then restart the child bridge), or for the whole Homebridge, or set `consoleLogEnabled`. The debug log shows every command sent to the devices and every answer, the supported protocols of each discovered device and the inputs, favorites and Quick Select slots it reports.
 
 ## Reporting a problem
 
