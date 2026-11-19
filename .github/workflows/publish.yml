@@ -1,5 +1,5 @@
 name: Publish to npm
-# Triggered by pushing a version tag, e.g. `npm version patch` (pushes commit and tag, see RELEASING.md).
+# Triggered by pushing a version tag, e.g. `npm version patch` (pushes commit and tag, see docs/releasing.md).
 #
 # The package is only STAGED on npm (trusted publishing with the stage-only permission).
 # It becomes public after a maintainer approves it with 2FA / passkey:

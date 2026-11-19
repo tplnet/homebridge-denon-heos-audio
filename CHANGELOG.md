@@ -2,6 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.5.1-beta.1 (2026-11-19)
+
+### Changed
+
+- Shorter README, like in the other tplnet projects: what the plugin does, requirements, installation, a quick start, compatibility and security, privacy and a list of the documentation. The details moved into `docs/` on GitHub: [configuration](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/configuration.md) (control protocols, setup, all options, inputs, languages, beta versions, switching), [Apple Home](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/apple-home.md), [troubleshooting](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/troubleshooting.md), development, releasing and testing.
+- The package line of the README no longer mentions the former package name.
+
+No changes to the plugin code.
+
 ## 1.5.0 (2026-11-19)
 
 First regular version under the new name. Contains the changes of 1.4.1-beta.1 and 1.5.0-beta.1.

@@ -1,5 +1,7 @@
 # Test checklist
 
+[← Back to the README](../README.md)
+
 ## Automated checks (before every release)
 
 ```bash

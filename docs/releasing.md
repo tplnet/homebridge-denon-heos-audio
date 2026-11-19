@@ -1,6 +1,8 @@
-# Releasing
+# Releasing (maintainers)
 
-Releases work like in [homebridge-tahoma](https://github.com/tplnet/homebridge-tahoma): pushing a version tag starts the [Publish workflow](.github/workflows/publish.yml),
+[← Back to the README](../README.md)
+
+Releases work like in [homebridge-tahoma](https://github.com/tplnet/homebridge-tahoma): pushing a version tag starts the [Publish workflow](../.github/workflows/publish.yml),
 which **stages** the package on npm and creates the GitHub release. The new version only becomes public after you approve it on npm with 2FA / passkey,
 so a compromised workflow or repository can't publish on its own.
 
@@ -70,6 +72,6 @@ The package was renamed from `@tplnet/homebridge-denon-heos-audio` to `@tplnet/h
 4. After the first real version is approved: point `latest` to it while there is no regular version yet, so that new installs don't get the placeholder:
    `npm dist-tag add @tplnet/homebridge-heos-multiroom-audio@<version> latest`.
 5. Deprecate the old package with a pointer to the new one:
-   `npm deprecate @tplnet/homebridge-denon-heos-audio "Renamed to @tplnet/homebridge-heos-multiroom-audio – see https://github.com/tplnet/homebridge-heos-multiroom-audio#switching-from-tplnethomebridge-denon-heos-audio"`
+   `npm deprecate @tplnet/homebridge-denon-heos-audio "Renamed to @tplnet/homebridge-heos-multiroom-audio – see https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/configuration.md#switching-from-another-package"`
 
 No npm token is stored in GitHub and no GitHub environment is needed: the approval on npm with 2FA / passkey is the release gate.
