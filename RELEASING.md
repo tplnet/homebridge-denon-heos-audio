@@ -37,7 +37,16 @@ with several entries, group them under `### Added`, `### Changed`, `### Fixed` a
 
 Existing releases can be (re)filled with **Actions** → **Release notes** → **Run workflow** (a tag such as `v1.2.6`, or `all`). The section *Checked for this release* written by the publish run is kept.
 
-Versions with a suffix (e.g. `1.1.0-beta.1`) are staged with the npm tag `next` and marked as pre-release on GitHub, so they are not offered as an update in the Homebridge UI.
+## Beta first, release on request
+
+Every change is published as a **beta** first. A regular release is only made when the maintainer asks for it.
+
+1. Add a section for the beta at the top of `CHANGELOG.md`, e.g. `## 1.5.0-beta.1 (2026-11-19)`, and publish it like any version (`npm version 1.5.0-beta.1`, push, approve on npm). The next beta of the same version is `1.5.0-beta.2`, with its own section for the new changes.
+2. Betas are staged with the npm dist-tag **`beta`** (the identifier of the version) and marked as pre-release on GitHub. `latest` stays on the last regular release, so users of the regular version are not offered the beta.
+3. The Homebridge UI offers newer betas to users who already run a beta of this plugin (it looks for the dist-tag `beta`), and to users who enabled betas for this plugin.
+4. **Release:** when the betas have been tested, write a `## 1.5.0 (date)` section that combines the changes of all its betas (the beta sections stay below it), then `npm version 1.5.0`, push and approve. Users of the beta get the regular version as an update.
+
+Install a beta for testing: Homebridge UI → *Plugins* → ⋮ on this plugin → *Manage Version* → choose the beta, or in the Homebridge storage directory `npm install @tplnet/homebridge-denon-heos-audio@beta`. Back to the regular version: choose the latest regular version the same way, or `npm install @tplnet/homebridge-denon-heos-audio@latest`.
 
 ## One-time setup
 

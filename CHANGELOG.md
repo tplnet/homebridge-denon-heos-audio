@@ -2,6 +2,18 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.4.1-beta.1 (2026-11-19)
+
+First beta: from now on every change is published as a beta first and becomes a regular version after it has been tested.
+
+### Changed
+
+- Betas are published with the npm dist-tag `beta` (before: `next`), so the Homebridge UI offers newer betas to users who run a beta of this plugin. The README explains how to install a beta (Homebridge UI → *Manage Version*) and how to go back to the regular version; new badge with the current beta.
+- README: plugin icon at the top (also on npm and in the Homebridge UI).
+- SECURITY.md: reports are handled on a best-effort basis.
+
+No changes to the plugin code.
+
 ## 1.4.0 (2026-11-18)
 
 ### Added

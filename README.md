@@ -7,6 +7,7 @@
 [![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
 [![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)
 [![Compatibility & CVE check](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml/badge.svg)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml)
+[![npm beta](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio/beta?label=beta)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio?activeTab=versions)
 [![License](https://img.shields.io/npm/l/@tplnet/homebridge-denon-heos-audio)](LICENSE)
 
 Package: [`@tplnet/homebridge-denon-heos-audio`](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
@@ -90,6 +91,10 @@ npm install @tplnet/homebridge-denon-heos-audio
 ```
 
 Requirements: Homebridge 1.8 or newer (2.x supported), Node.js 22.12+, 24 or 26.
+
+### Beta versions
+
+New features and fixes are published as a **beta** first (e.g. `1.5.0-beta.1`) and become a regular version after they have been tested. Betas are not offered to users of the regular version. To try one: Homebridge UI → *Plugins* → ⋮ on this plugin → *Manage Version* → choose the beta, or run `npm install @tplnet/homebridge-denon-heos-audio@beta` in the Homebridge storage directory. While you run a beta, the Homebridge UI offers newer betas and later the regular version as updates. Betas can contain errors – please report them as an [issue](https://github.com/tplnet/homebridge-denon-heos-audio/issues).
 
 ### Switching from the original plugin
 
@@ -399,7 +404,7 @@ npm run watch        # starts a local Homebridge with test/hbConfig and rebuilds
 Manual tests with real devices: see [TESTING.md](TESTING.md).
 Publishing a new version: see [RELEASING.md](RELEASING.md).
 
-Release notes: before tagging, describe the changes in a `## X.Y.Z` section at the top of `CHANGELOG.md`. `npm version` refuses to run without it, and the workflow uses this section as the description of the GitHub release (and stops before publishing if it is missing). Start each entry with what changes for the user, technical details after it; with several entries, group them under `### Added`, `### Changed`, `### Fixed` and `### Security`. The release also lists what was checked before it went out (newest Homebridge release, no known vulnerabilities, tests, tested Node.js versions). Pre-release versions (e.g. `1.4.0-beta.1`) are published under the npm tag `next` and marked as pre-release on GitHub. Existing releases can be (re)filled with *Actions* → *Release notes* → *Run workflow* (tag or `all`).
+Release notes: before tagging, describe the changes in a `## X.Y.Z` section at the top of `CHANGELOG.md`. `npm version` refuses to run without it, and the workflow uses this section as the description of the GitHub release (and stops before publishing if it is missing). Start each entry with what changes for the user, technical details after it; with several entries, group them under `### Added`, `### Changed`, `### Fixed` and `### Security`. The release also lists what was checked before it went out (newest Homebridge release, no known vulnerabilities, tests, tested Node.js versions). Pre-release versions (e.g. `1.4.0-beta.1`) are published under the npm dist-tag named after their identifier (`beta`, which the Homebridge UI uses to offer newer betas) and marked as pre-release on GitHub. Existing releases can be (re)filled with *Actions* → *Release notes* → *Run workflow* (tag or `all`).
 
 Upstream changes from the original project can be merged with:
 
