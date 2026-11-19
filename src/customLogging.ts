@@ -22,6 +22,10 @@ export class ConsoleLogger {
   public readonly logLevel: number;
   public readonly datetimePrefix: boolean;
 
+  /**
+   * @param prefix shown in cyan like the prefix of the Homebridge log, so the Homebridge UI
+   *   ("Plugin Logs") recognizes the lines as lines of this plugin
+   */
   constructor(logLevel: LogLevel, prefix?: string, datetimePrefix = false) {
     this.prefix = prefix;
     this.datetimePrefix = datetimePrefix;
@@ -33,9 +37,14 @@ export class ConsoleLogger {
     if (this.logLevel <= logLevelNumeric[level]) {
       let fullMessage;
       if (this.prefix) {
-        fullMessage = this.datetimePrefix ? `[${format(new Date(), "M/d/yyyy, h:mm:ss a")}] [${this.prefix}] ${message}` : `[${this.prefix}] ${message}`;
+        const prefix = `\x1b[36m[${this.prefix}]\x1b[39m`;
+        fullMessage = this.datetimePrefix
+          ? `[${format(new Date(), "M/d/yyyy, h:mm:ss a")}] ${prefix} ${message}`
+          : `${prefix} ${message}`;
       } else {
-        fullMessage = this.datetimePrefix ? `[${format(new Date(), "M/d/yyyy, h:mm:ss a")}] ${message}` : message;
+        fullMessage = this.datetimePrefix
+          ? `[${format(new Date(), "M/d/yyyy, h:mm:ss a")}] ${message}`
+          : message;
       }
 
       console.log(fullMessage, ...parameters);

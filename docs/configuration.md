@@ -132,6 +132,7 @@ See [Apple Home](apple-home.md).
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
+| `name` | no | `HEOS Multiroom-Audio` | Name of the plugin in the Homebridge log. The Homebridge UI shows the log of this plugin (*Plugins* → ⋮ → *Plugin Logs*) only with a name set. |
 | `deviceDiscovery` | no | `true` | Logs Denon / Marantz devices found in the network. |
 | `autoAddDiscoveredDevices` | no | `false` | Adds every discovered device automatically (see [automatic setup](#step-3a-automatic-setup)). Manually configured devices are not affected. |
 | `excludedSerialNumbers` | no | `[]` | Serial numbers of discovered devices that should not be added automatically. |

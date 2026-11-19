@@ -33,6 +33,9 @@ then restart Homebridge **once** and reload the page.
 **Homebridge doesn't start: `EADDRINUSE: address already in use`.**
 Usually an old Homebridge process is still running (e.g. after several restarts in a row): `ps aux | grep -i [h]omebridge` shows two main `homebridge` processes. Stop Homebridge, end the old process (`kill <pid>`) and start Homebridge again.
 
+**The window *Plugin Logs* stays empty (except right after a restart).**
+The Homebridge UI shows only the lines that start with the name from the plugin settings. Without a name it looks for the package name, which the Homebridge log doesn't use for the plugin's lines. Open the plugin settings (the *Name* field is prefilled with `HEOS Multiroom-Audio`), save and restart the plugin.
+
 **A device is added automatically although I don't want it in Apple Home.**
 Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then remove it from the Home app.
 

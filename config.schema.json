@@ -6,6 +6,13 @@
   "schema": {
     "type": "object",
     "properties": {
+      "name": {
+        "title": "Name",
+        "description": "Name of the plugin in the Homebridge log. The Homebridge UI uses it to show the log of this plugin (Plugins → ⋮ → Plugin Logs).",
+        "type": "string",
+        "required": false,
+        "default": "HEOS Multiroom-Audio"
+      },
       "deviceDiscovery": {
         "title": "Device Discovery",
         "description": "Enable to automatically discover Denon devices on your network. (About 30 seconds after the start, the homebridge log shows an overview of all found and configured devices. Ensure that your homebridge's log level is at least set to 'info' or enable the console log below.)",
@@ -248,28 +255,21 @@
         "title": "Log Level",
         "description": "If console log is enabled, only log messages at this log level or below it will be displayed in the console.",
         "type": "string",
-        "enum": [
-          "error",
-          "warn",
-          "success",
-          "info",
-          "debug"
-        ],
+        "enum": ["error", "warn", "success", "info", "debug"],
         "required": false,
         "default": "debug"
       }
     }
   },
   "layout": [
+    "name",
     "deviceDiscovery",
     "autoAddDiscoveredDevices",
     {
       "key": "excludedSerialNumbers",
       "type": "array",
       "orderable": false,
-      "items": [
-        "excludedSerialNumbers[]"
-      ],
+      "items": ["excludedSerialNumbers[]"],
       "listItems": 0
     },
     {
@@ -355,10 +355,7 @@
       "description": "Only needed when looking for errors.",
       "expandable": true,
       "expanded": false,
-      "items": [
-        "consoleLogEnabled",
-        "consoleLogLevel"
-      ]
+      "items": ["consoleLogEnabled", "consoleLogLevel"]
     }
   ]
 }

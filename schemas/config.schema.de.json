@@ -6,6 +6,13 @@
   "schema": {
     "type": "object",
     "properties": {
+      "name": {
+        "title": "Name",
+        "description": "Name des Plugins im Homebridge-Log. Die Homebridge-Oberfläche zeigt darüber das Log dieses Plugins an (Plugins → ⋮ → Plugin-Logs).",
+        "type": "string",
+        "required": false,
+        "default": "HEOS Multiroom-Audio"
+      },
       "deviceDiscovery": {
         "title": "Geräteerkennung",
         "description": "Sucht automatisch nach Denon- und Marantz-Geräten im Netzwerk. Etwa 30 Sekunden nach dem Start zeigt das Homebridge-Log eine Übersicht aller gefundenen und konfigurierten Geräte (Log-Level mindestens „info“ oder unten das Konsolen-Log aktivieren).",
@@ -248,28 +255,21 @@
         "title": "Log-Level",
         "description": "Bei aktiviertem Konsolen-Log werden nur Meldungen dieses Levels und darunter ausgegeben.",
         "type": "string",
-        "enum": [
-          "error",
-          "warn",
-          "success",
-          "info",
-          "debug"
-        ],
+        "enum": ["error", "warn", "success", "info", "debug"],
         "required": false,
         "default": "debug"
       }
     }
   },
   "layout": [
+    "name",
     "deviceDiscovery",
     "autoAddDiscoveredDevices",
     {
       "key": "excludedSerialNumbers",
       "type": "array",
       "orderable": false,
-      "items": [
-        "excludedSerialNumbers[]"
-      ],
+      "items": ["excludedSerialNumbers[]"],
       "listItems": 0
     },
     {
@@ -355,10 +355,7 @@
       "description": "Nur für die Fehlersuche nötig.",
       "expandable": true,
       "expanded": false,
-      "items": [
-        "consoleLogEnabled",
-        "consoleLogLevel"
-      ]
+      "items": ["consoleLogEnabled", "consoleLogLevel"]
     }
   ]
 }

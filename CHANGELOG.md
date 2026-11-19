@@ -2,6 +2,12 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.5.1-beta.8 (2026-11-19)
+
+### Fixed
+
+- Homebridge UI: the window *Plugin Logs* stayed empty except right after a restart. The UI only shows lines prefixed with the name from the plugin settings, and the settings had no name. The settings form now has a *Name* field (default `HEOS Multiroom-Audio`); open the plugin settings and save them once. Without a name the plugin logs a hint at startup. The console log (`consoleLogEnabled`) uses the same prefix in the format the UI recognizes.
+
 ## 1.5.1-beta.7 (2026-11-19)
 
 ### Fixed

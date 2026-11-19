@@ -1,4 +1,12 @@
-import type { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from "homebridge";
+import type {
+  API,
+  Characteristic,
+  DynamicPlatformPlugin,
+  Logger,
+  PlatformAccessory,
+  PlatformConfig,
+  Service,
+} from "homebridge";
 
 import { DenonAudioAccessory as DenonAudioAccessory } from "./platformAccessory.js";
 import * as CustomLogging from "./customLogging.js";
@@ -33,9 +41,15 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private readonly activeSerialNumbers = new Set<string>();
 
   // device discovery
-  private discoveryFactory: () => HeosDiscovery = () => new HeosDiscovery({ debugLog: this.log.debug.bind(this.log) });
+  private discoveryFactory: () => HeosDiscovery = () =>
+    new HeosDiscovery({ debugLog: this.log.debug.bind(this.log) });
   private activeDiscovery: HeosDiscovery | undefined;
-  private discoveryRestartDelaysMs = [1 * MINUTE, 5 * MINUTE, 15 * MINUTE, 30 * MINUTE];
+  private discoveryRestartDelaysMs = [
+    1 * MINUTE,
+    5 * MINUTE,
+    15 * MINUTE,
+    30 * MINUTE,
+  ];
   private discoveryRestartTimer: NodeJS.Timeout | undefined;
   // ends the current discovery session or restart delay immediately (used on shutdown)
   private interruptDiscovery: (() => void) | undefined;
@@ -56,8 +70,21 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
   private readonly readyToPublish: PlatformAccessory[] = [];
 
   constructor(log: Logger, config: PlatformConfig, api: API) {
-    this.rawLog = config.consoleLogEnabled ? new CustomLogging.ConsoleLogger(CustomLogging.logLevelFromString[config.consoleLogLevel] ?? CustomLogging.logLevelFromString.debug, PLUGIN_NAME, true) : log;
+    // The Homebridge UI ("Plugin Logs") shows the lines prefixed with the configured name, or the package name without one.
+    this.rawLog = config.consoleLogEnabled
+      ? new CustomLogging.ConsoleLogger(
+          CustomLogging.logLevelFromString[config.consoleLogLevel] ??
+            CustomLogging.logLevelFromString.debug,
+          config.name || PLUGIN_NAME,
+          true,
+        )
+      : log;
     this.log = new CustomLogging.LoggerPrefixWrapper(this.rawLog, "Platform");
+    if (!config.name && !config.consoleLogEnabled) {
+      this.log.info(
+        'No name set in the plugin settings: the Homebridge UI can\'t show the log of this plugin under "Plugin Logs". Open the plugin settings and save them once.',
+      );
+    }
     this.config = config;
     this.api = api;
 
@@ -103,7 +130,9 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     if (this.config.devices) {
       for (const deviceConfig of this.config.devices as DeviceConfig[]) {
         if (this.activeSerialNumbers.has(deviceConfig.serialNumber)) {
-          this.log.warn(`Device with serial number ${deviceConfig.serialNumber} is configured more than once. Skipping '${deviceConfig.name}'.`);
+          this.log.warn(
+            `Device with serial number ${deviceConfig.serialNumber} is configured more than once. Skipping '${deviceConfig.name}'.`,
+          );
           continue;
         }
         this.activeSerialNumbers.add(deviceConfig.serialNumber);
@@ -119,20 +148,35 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
         if (existingAccessory) {
           // the accessory already exists
-          this.log.info("Restoring existing accessory from cache:", existingAccessory.displayName);
+          this.log.info(
+            "Restoring existing accessory from cache:",
+            existingAccessory.displayName,
+          );
 
           // create the accessory handler for the restored accessory
           this.withCheckedProtocol(deviceConfig)
-            .then((checkedConfig) => this.createAccessoryHandler(existingAccessory, checkedConfig)?.setupInputs())
-            .catch((error) => this.log.error(`Could not set up '${deviceConfig.name}':`, error));
+            .then((checkedConfig) =>
+              this.createAccessoryHandler(
+                existingAccessory,
+                checkedConfig,
+              )?.setupInputs(),
+            )
+            .catch((error) =>
+              this.log.error(`Could not set up '${deviceConfig.name}':`, error),
+            );
 
           // after it has been restored, the existing accessory should be removed form the uuid list
-          existingAccessoriesUuids = existingAccessoriesUuids.filter((uuid) => uuid !== existingAccessory.UUID);
+          existingAccessoriesUuids = existingAccessoriesUuids.filter(
+            (uuid) => uuid !== existingAccessory.UUID,
+          );
         } else {
           // the accessory does not yet exist, so we need to create it
           this.log.info("Adding new accessory:", deviceConfig.name);
 
-          const accessory = new this.api.platformAccessory(deviceConfig.name, uuid);
+          const accessory = new this.api.platformAccessory(
+            deviceConfig.name,
+            uuid,
+          );
           this.publishNewAccessory(deviceConfig, accessory);
         }
       }
@@ -142,17 +186,28 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     for (const uuid of existingAccessoriesUuids) {
       const existingAccessory = this.accessories.get(uuid);
       if (existingAccessory) {
-        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-        this.log.info("Removing existing accessory from cache:", existingAccessory.displayName);
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+          existingAccessory,
+        ]);
+        this.log.info(
+          "Removing existing accessory from cache:",
+          existingAccessory.displayName,
+        );
       }
     }
 
     if (this.discoveryEnabled()) {
       this.scheduleOverview(OVERVIEW_FIRST_DELAY_MS);
-      this.initialWindowTimer = setTimeout(() => this.closeInitialWindow(), INITIAL_DISCOVERY_WINDOW_MS);
+      this.initialWindowTimer = setTimeout(
+        () => this.closeInitialWindow(),
+        INITIAL_DISCOVERY_WINDOW_MS,
+      );
       this.initialWindowTimer.unref?.();
       this.runDeviceDiscovery().catch((error) => {
-        this.log.warn("Device discovery stopped unexpectedly. New devices will no longer be discovered.", error);
+        this.log.warn(
+          "Device discovery stopped unexpectedly. New devices will no longer be discovered.",
+          error,
+        );
       });
     } else {
       this.closeInitialWindow();
@@ -178,14 +233,24 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
   /** Publishes the accessories of the start in one call, sorted by serial number (stable ports). */
   private publishInitialAccessories() {
-    if (this.initialPublishDone || this.initialWindowOpen || this.pendingInitialSetups.size > 0) {
+    if (
+      this.initialPublishDone ||
+      this.initialWindowOpen ||
+      this.pendingInitialSetups.size > 0
+    ) {
       return;
     }
     this.initialPublishDone = true;
-    const serial = (accessory: PlatformAccessory) => String(accessory.context.device?.serialNumber ?? "");
-    const accessories = this.readyToPublish.splice(0).sort((a, b) => serial(a).localeCompare(serial(b)));
+    const serial = (accessory: PlatformAccessory) =>
+      String(accessory.context.device?.serialNumber ?? "");
+    const accessories = this.readyToPublish
+      .splice(0)
+      .sort((a, b) => serial(a).localeCompare(serial(b)));
     if (accessories.length > 0) {
-      this.log.debug("Publishing accessories in this order (ports are assigned in this order):", accessories.map((a) => a.displayName).join(", "));
+      this.log.debug(
+        "Publishing accessories in this order (ports are assigned in this order):",
+        accessories.map((a) => a.displayName).join(", "),
+      );
       this.api.publishExternalAccessories(PLUGIN_NAME, accessories);
     }
   }
@@ -225,14 +290,24 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
 
   private isExcluded(serialNumber: string): boolean {
     const excluded: unknown = this.config.excludedSerialNumbers;
-    return Array.isArray(excluded) && excluded.some((entry) => String(entry).trim().toUpperCase() === serialNumber.toUpperCase());
+    return (
+      Array.isArray(excluded) &&
+      excluded.some(
+        (entry) =>
+          String(entry).trim().toUpperCase() === serialNumber.toUpperCase(),
+      )
+    );
   }
 
   /**
    * Sets up a new accessory and publishes it as external accessory
    * (HomeKit only allows one television accessory per bridge).
    */
-  private publishNewAccessory(deviceConfig: DeviceConfig, accessory: PlatformAccessory, supportedModes?: DenonProtocol.ControlMode[]) {
+  private publishNewAccessory(
+    deviceConfig: DeviceConfig,
+    accessory: PlatformAccessory,
+    supportedModes?: DenonProtocol.ControlMode[],
+  ) {
     // store a copy of the device object in the `accessory.context`
     accessory.context.device = deviceConfig;
     const setup = this.withCheckedProtocol(deviceConfig, supportedModes)
@@ -242,10 +317,19 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
           return;
         }
         // the inputs are read from the device first, as the services of a published accessory should not change anymore
-        await handler.setupInputs().catch((error) => this.log.error(`Could not set up the inputs of '${deviceConfig.name}':`, error));
+        await handler
+          .setupInputs()
+          .catch((error) =>
+            this.log.error(
+              `Could not set up the inputs of '${deviceConfig.name}':`,
+              error,
+            ),
+          );
         this.publishAccessory(accessory);
       })
-      .catch((error) => this.log.error(`Could not set up '${deviceConfig.name}':`, error));
+      .catch((error) =>
+        this.log.error(`Could not set up '${deviceConfig.name}':`, error),
+      );
     this.trackInitialSetup(setup);
   }
 
@@ -253,9 +337,21 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
    * Checks the configured control protocol against the protocols the device supports and falls back to a supported
    * one if necessary (with a warning). If the device can't be reached, the configuration is used unchanged.
    */
-  private async withCheckedProtocol(deviceConfig: DeviceConfig, knownSupportedModes?: DenonProtocol.ControlMode[]): Promise<DeviceConfig> {
-    const supportedModes = knownSupportedModes ?? (await DenonProtocol.checkProtocolSupport(deviceConfig.ip, this.log.debug.bind(this.log)));
-    const result = checkControlProtocol(deviceConfig.name, deviceConfig.controlProtocol, supportedModes);
+  private async withCheckedProtocol(
+    deviceConfig: DeviceConfig,
+    knownSupportedModes?: DenonProtocol.ControlMode[],
+  ): Promise<DeviceConfig> {
+    const supportedModes =
+      knownSupportedModes ??
+      (await DenonProtocol.checkProtocolSupport(
+        deviceConfig.ip,
+        this.log.debug.bind(this.log),
+      ));
+    const result = checkControlProtocol(
+      deviceConfig.name,
+      deviceConfig.controlProtocol,
+      supportedModes,
+    );
     if (result.warning) {
       this.log.warn(result.warning);
     }
@@ -263,9 +359,13 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
       this.log.info(result.hint);
     }
     if (supportedModes.length === 0) {
-      this.log.debug(`Could not check the protocols of '${deviceConfig.name}' (${deviceConfig.ip} not reachable). Using the configuration.`);
+      this.log.debug(
+        `Could not check the protocols of '${deviceConfig.name}' (${deviceConfig.ip} not reachable). Using the configuration.`,
+      );
     }
-    return result.protocol === deviceConfig.controlProtocol ? deviceConfig : { ...deviceConfig, controlProtocol: result.protocol };
+    return result.protocol === deviceConfig.controlProtocol
+      ? deviceConfig
+      : { ...deviceConfig, controlProtocol: result.protocol };
   }
 
   /**
@@ -279,23 +379,46 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     supportedModes: DenonProtocol.ControlMode[],
   ): { status: DeviceStatus; name?: string; protocol?: string } {
     if (this.activeSerialNumbers.has(serialNumber)) {
-      this.log.debug(`Device ${serialNumber} is configured manually. Using the manual configuration.`);
+      this.log.debug(
+        `Device ${serialNumber} is configured manually. Using the manual configuration.`,
+      );
       return { status: "manual" };
     }
     if (this.isExcluded(serialNumber)) {
-      this.log.debug(`Device ${serialNumber} is excluded from automatic adding.`);
+      this.log.debug(
+        `Device ${serialNumber} is excluded from automatic adding.`,
+      );
       return { status: "excluded" };
     }
 
-    const deviceConfig = buildDiscoveredDeviceConfig({ serialNumber, ip, friendlyName, modelName, supportedModes });
+    const deviceConfig = buildDiscoveredDeviceConfig({
+      serialNumber,
+      ip,
+      friendlyName,
+      modelName,
+      supportedModes,
+    });
     if (!deviceConfig) {
       return { status: "unsupported" };
     }
 
     this.activeSerialNumbers.add(serialNumber);
-    this.log.info(`Automatically adding discovered device '${deviceConfig.name}' (${deviceConfig.controlProtocol}, ${ip}).`);
-    this.publishNewAccessory(deviceConfig, new this.api.platformAccessory(deviceConfig.name, this.api.hap.uuid.generate(serialNumber)), supportedModes);
-    return { status: "auto", name: deviceConfig.name, protocol: deviceConfig.controlProtocol };
+    this.log.info(
+      `Automatically adding discovered device '${deviceConfig.name}' (${deviceConfig.controlProtocol}, ${ip}).`,
+    );
+    this.publishNewAccessory(
+      deviceConfig,
+      new this.api.platformAccessory(
+        deviceConfig.name,
+        this.api.hap.uuid.generate(serialNumber),
+      ),
+      supportedModes,
+    );
+    return {
+      status: "auto",
+      name: deviceConfig.name,
+      protocol: deviceConfig.controlProtocol,
+    };
   }
 
   /**
@@ -303,11 +426,22 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
    * so that a single misconfigured device does not prevent the other devices (or Homebridge) from starting.
    * @returns the accessory handler, or undefined if the configuration is invalid
    */
-  private createAccessoryHandler(accessory: PlatformAccessory, deviceConfig: DeviceConfig): DenonAudioAccessory | undefined {
+  private createAccessoryHandler(
+    accessory: PlatformAccessory,
+    deviceConfig: DeviceConfig,
+  ): DenonAudioAccessory | undefined {
     try {
-      return new DenonAudioAccessory(this, accessory, deviceConfig, this.rawLog);
+      return new DenonAudioAccessory(
+        this,
+        accessory,
+        deviceConfig,
+        this.rawLog,
+      );
     } catch (error) {
-      this.log.error(`Could not set up device '${deviceConfig.name}':`, error instanceof Error ? error.message : error);
+      this.log.error(
+        `Could not set up device '${deviceConfig.name}':`,
+        error instanceof Error ? error.message : error,
+      );
       return undefined;
     }
   }
@@ -328,11 +462,21 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
       if (Date.now() - startedAt > 30 * MINUTE) {
         failures = 0; // it ran fine for a while, start over with the shortest delay
       }
-      const delay = this.discoveryRestartDelaysMs[Math.min(failures, this.discoveryRestartDelaysMs.length - 1)];
+      const delay =
+        this.discoveryRestartDelaysMs[
+          Math.min(failures, this.discoveryRestartDelaysMs.length - 1)
+        ];
       failures++;
 
-      const reason = error instanceof Error ? error.message : error !== undefined ? String(error) : "discovery ended";
-      this.log.warn(`Device discovery stopped (${reason}). Restarting in ${Math.max(1, Math.round(delay / MINUTE))} min.`);
+      const reason =
+        error instanceof Error
+          ? error.message
+          : error !== undefined
+            ? String(error)
+            : "discovery ended";
+      this.log.warn(
+        `Device discovery stopped (${reason}). Restarting in ${Math.max(1, Math.round(delay / MINUTE))} min.`,
+      );
       this.log.debug("Error that stopped the device discovery:", error);
 
       await new Promise<void>((resolve) => {
@@ -382,7 +526,10 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     this.ssdpSeenSerialNumbers.add(serial);
 
     this.log.debug("Checking protocol support for:", device.ip);
-    const supportedModes = await DenonProtocol.checkProtocolSupport(device.ip, this.log.debug.bind(this.log));
+    const supportedModes = await DenonProtocol.checkProtocolSupport(
+      device.ip,
+      this.log.debug.bind(this.log),
+    );
     const heosName = device.friendlyName ?? device.modelName ?? serial;
     if (supportedModes.length === 0) {
       this.recordDiscovered(device, { status: "unreachable", name: heosName });
@@ -396,19 +543,39 @@ export class DenonAudioPlatform implements DynamicPlatformPlugin {
     );
 
     if (this.autoAddEnabled()) {
-      const result = this.autoAddDiscoveredDevice(serial, device.ip, device.friendlyName, device.modelName, supportedModes);
-      this.recordDiscovered(device, { ...result, name: result.name ?? heosName });
+      const result = this.autoAddDiscoveredDevice(
+        serial,
+        device.ip,
+        device.friendlyName,
+        device.modelName,
+        supportedModes,
+      );
+      this.recordDiscovered(device, {
+        ...result,
+        name: result.name ?? heosName,
+      });
     } else {
       this.recordDiscovered(device, {
-        status: this.activeSerialNumbers.has(serial) ? "manual" : "autoAddDisabled",
+        status: this.activeSerialNumbers.has(serial)
+          ? "manual"
+          : "autoAddDisabled",
         name: heosName,
-        protocol: buildDiscoveredDeviceConfig({ ...device, supportedModes })?.controlProtocol,
+        protocol: buildDiscoveredDeviceConfig({ ...device, supportedModes })
+          ?.controlProtocol,
       });
     }
   }
 
-  private recordDiscovered(device: DiscoveredHeosDevice, result: { status: DeviceStatus; name: string; protocol?: string }) {
-    this.deviceOverview.addDiscovered({ serialNumber: device.serialNumber, model: device.modelName, ip: device.ip, ...result });
+  private recordDiscovered(
+    device: DiscoveredHeosDevice,
+    result: { status: DeviceStatus; name: string; protocol?: string },
+  ) {
+    this.deviceOverview.addDiscovered({
+      serialNumber: device.serialNumber,
+      model: device.modelName,
+      ip: device.ip,
+      ...result,
+    });
     if (this.overviewLogged) {
       // a device found later (e.g. switched on hours after the start): log the updated overview
       this.scheduleOverview(OVERVIEW_UPDATE_DELAY_MS);

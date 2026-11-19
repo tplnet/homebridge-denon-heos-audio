@@ -42,6 +42,7 @@ describe("config.schema.json", () => {
       "deviceDiscovery",
       "devices",
       "excludedSerialNumbers",
+      "name",
     ]);
   });
 });
