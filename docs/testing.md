@@ -107,7 +107,8 @@ Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control 
 - [x] The settings form opens and saves without "Config validation failed" (1.3.4).
 - [ ] A power on favorite that doesn't exist (e.g. 150) is reported as a warning at startup (1.3.4).
 - [x] *Power On Quick Select* slot 5 on a Denon Home 150 is reported as missing at startup (the device reports 3 slots) (1.4.0).
-- [ ] *Power On Quick Select* on a Denon Home 150: switching on with nothing to resume starts the slot (log: `starting Quick Select …`) (1.4.0).
+- [x] The Quick Select command (`player/play_quickselect`) is accepted by a Denon Home 150 (`result: success`) (1.4.0).
+- [ ] *Power On Quick Select* on a Denon Home 150: switching on with nothing to resume starts the slot (log: `starting Quick Select …`). Hard to trigger: the speaker keeps the last source even after a power cut, and an ended Spotify Connect session is still resumed (1.4.0).
 
 ## Reporting
 
