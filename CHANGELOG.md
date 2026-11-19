@@ -2,7 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
-## 1.5.1-beta.2 (2026-11-19)
+## 1.5.1-beta.3 (2026-11-19)
+
+### Fixed
+
+- Malware scan: the virus signatures couldn't be downloaded on GitHub (freshclam is restricted to its system configuration), so the release of 1.5.1-beta.2 stopped before publishing. freshclam now runs with its system configuration, as in the other tplnet projects. Contains the changes of 1.5.1-beta.2 (not published).
+
+No changes to the plugin code.
+
+## 1.5.1-beta.2 (2026-11-19, not published)
 
 ### Security
 
