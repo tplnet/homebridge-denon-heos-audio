@@ -7,6 +7,7 @@
 [![npm](https://img.shields.io/npm/v/@tplnet/homebridge-heos-multiroom-audio)](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio)
 [![CI](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/ci.yml)
 [![Compatibility & CVE check](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/compat.yml/badge.svg)](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/compat.yml)
+[![Malware scan](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/malware.yml/badge.svg)](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/malware.yml)
 [![npm beta](https://img.shields.io/npm/v/@tplnet/homebridge-heos-multiroom-audio/beta?label=beta)](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio?activeTab=versions)
 [![License](https://img.shields.io/npm/l/@tplnet/homebridge-heos-multiroom-audio)](LICENSE)
 
@@ -91,13 +92,14 @@ Devices you want to set up yourself (name, protocol, inputs, volume limit) are a
 
 ## Compatibility and security
 
-This plugin is kept compatible with the **newest Homebridge release** and free of **known vulnerabilities (CVEs)**:
+This plugin is kept compatible with the **newest Homebridge release** and free of **known vulnerabilities (CVEs)** and **malware**:
 
 - **Weekly and on every dependency change** the [Compatibility & CVE check](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/compat.yml) workflow
   - runs `npm audit` – any known vulnerability in the runtime dependencies fails the check,
   - builds the plugin and starts it with **homebridge@latest** and **homebridge@beta** on Node.js 22, 24 and 26 with simulated HEOS and AVR Control devices (`npm run smoke`): the plugin must load, be accepted as compatible (`engines`), connect to the devices, read their inputs and run without errors, HAP warnings or deprecation warnings.
 - **On every push** the [CI](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/ci.yml) workflow runs lint, the unit tests and the smoke test, also with **Homebridge 1.x** (on Node.js 22 and 24).
-- **Every release** runs the same CVE and Homebridge checks before the version is staged on npm – a release with a known vulnerability or an incompatibility is not published.
+- **Every release** runs the same CVE, malware and Homebridge checks before the version is staged on npm – a release with a known vulnerability, malware or an incompatibility is not published.
+- **Malware scan** ([workflow](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/malware.yml), weekly, on every dependency change and before every release): [OSV-Scanner](https://google.github.io/osv-scanner/) checks all dependencies against the list of **known malicious npm packages**, and [ClamAV](https://www.clamav.net/) scans the package as it is published plus all installed dependencies for **malware**. Dependencies are installed with `npm ci --ignore-scripts`, so their install scripts never run in the build.
 - **Dependabot** opens weekly pull requests for dependency and GitHub Actions updates.
 
 Found a security issue? Please report it privately via GitHub (*Security* → *Report a vulnerability*) instead of a public issue, see [SECURITY.md](SECURITY.md).

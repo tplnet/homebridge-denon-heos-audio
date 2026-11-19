@@ -11,7 +11,8 @@ updates:
       dev-dependencies:
         dependency-type: development
   - package-ecosystem: github-actions
-    directory: /
+    # also the composite action in .github/actions/ (malware scan)
+    directories: ['/', '/.github/actions/*']
     schedule:
       interval: weekly
       day: monday

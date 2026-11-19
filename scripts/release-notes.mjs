@@ -74,6 +74,9 @@ if (withChecks) {
   checks.push(
     "Unit tests and smoke test with simulated HEOS / AVR Control devices passed",
   );
+  checks.push(
+    "No known malicious packages in the dependencies (OSV) and no malware in the package (ClamAV)",
+  );
   const matrix = /^\s*node:\s*\[([^\]]+)\]/m.exec(
     readFileSync(join(root, ".github/workflows/ci.yml"), "utf8"),
   );

@@ -83,7 +83,8 @@
     "watch": "npm run build && npm link && nodemon",
     "preversion": "npm run check",
     "version": "node scripts/release-notes.mjs > /dev/null",
-    "postversion": "git push --follow-tags"
+    "postversion": "git push --follow-tags",
+    "malware": "node scripts/malware-scan.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

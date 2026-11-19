@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Runtime dependencies (fails on any vulnerability)
         run: npm audit --omit=dev --audit-level=low
       - name: All dependencies incl. dev tools (reported only)
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Install homebridge@${{ matrix.homebridge }}
         run: npm install --no-save homebridge@${{ matrix.homebridge }} && npx homebridge --version
       - run: npm run build

@@ -2,6 +2,15 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.5.1-beta.2 (2026-11-19)
+
+### Security
+
+- New **malware scan**, like in the other tplnet projects: weekly, on every dependency change and before every release, [OSV-Scanner](https://google.github.io/osv-scanner/) checks all dependencies against the list of known malicious npm packages and [ClamAV](https://www.clamav.net/) scans the package as it is published and all installed dependencies. Any finding stops the release. The release notes list the scan under "Checked for this release"; the README has a new badge.
+- All workflows install the dependencies with `npm ci --ignore-scripts`, so install scripts of dependencies never run in the build.
+
+No changes to the plugin code.
+
 ## 1.5.1-beta.1 (2026-11-19)
 
 ### Changed

@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Install Homebridge ${{ matrix.homebridge }}
         if: matrix.homebridge != 'devDependency'
         run: npm install --no-save homebridge@${{ matrix.homebridge }}

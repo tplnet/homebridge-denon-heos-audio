@@ -17,7 +17,7 @@ so a compromised workflow or repository can't publish on its own.
 
    This runs all checks first (`npm audit`, lint, unit tests, smoke test), stops if `CHANGELOG.md` has no section for the new version,
    then sets the version, commits, tags (`v1.1.0`) and pushes commit and tag.
-3. The workflow checks the tag against `package.json`, runs `npm audit`, lint, tests and the smoke test against the latest Homebridge release,
+3. The workflow checks the tag against `package.json`, runs `npm audit`, lint, tests, the smoke test against the latest Homebridge release and the malware scan (OSV-Scanner, ClamAV),
    **stages** the package on npm (with provenance) and creates the GitHub release with the notes from `CHANGELOG.md`.
 4. **Approve** the staged version: npmjs.com → package → **Staged Packages**, or
 
@@ -31,7 +31,7 @@ so a compromised workflow or repository can't publish on its own.
 
 Before tagging, describe the changes in a `## X.Y.Z` section at the top of `CHANGELOG.md`. `npm version` refuses to run without it,
 and the workflow uses this section as the description of the GitHub release, followed by what was checked for the release
-(newest Homebridge release, `npm audit`, tests, tested Node.js and supported Homebridge versions) and a link to the changelog
+(newest Homebridge release, `npm audit`, tests, tested Node.js and supported Homebridge versions, no known malicious packages or malware) and a link to the changelog
 (and stops before publishing if it is missing). Preview: `node scripts/release-notes.mjs 1.1.0`.
 
 Write each entry from the user's point of view first (what changes in Apple Home, the Homebridge UI or the log), technical details after it;
