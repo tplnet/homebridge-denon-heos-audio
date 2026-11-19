@@ -1,0 +1,43 @@
+name: Device report
+description: Tell us which HEOS device works with the plugin, or which one doesn't.
+labels: [device report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reports about devices help other users. Which devices are known to work: see the [README](https://github.com/tplnet/homebridge-heos-multiroom-audio#which-devices-work).
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      placeholder: e.g. Denon HEOS 5, Marantz SR7015
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it work?
+      options:
+        - Works
+        - Works partly (please describe below)
+        - Doesn't work
+    validations:
+      required: true
+  - type: input
+    id: protocol
+    attributes:
+      label: Control protocol and supported protocols from the log
+      description: The device overview in the log shows the protocol; the debug log lists the supported protocols of each discovered device.
+      placeholder: e.g. HYBRID (supports AVRCONTROL, HEOSCLI)
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: e.g. 1.5.1
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What works and what doesn't (power, volume, mute, inputs, play/pause, next/previous). Which inputs does the log report?

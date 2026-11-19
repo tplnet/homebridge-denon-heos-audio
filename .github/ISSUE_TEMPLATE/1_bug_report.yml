@@ -1,0 +1,85 @@
+name: Bug report
+description: Something doesn't work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please check [troubleshooting](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/troubleshooting.md) first.
+        This is a private hobby project: reports are handled best effort, without guarantee.
+        **Security problems:** please don't open an issue, use *Security* → *Report a vulnerability* instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      placeholder: e.g. Denon Home 150, Marantz Cinema 60
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Control protocol
+      description: Shown in the device overview in the log ("Protocol" column).
+      options:
+        - HEOSCLI
+        - HYBRID
+        - AVRCONTROL
+        - I don't know
+    validations:
+      required: true
+  - type: dropdown
+    id: setup
+    attributes:
+      label: How was the device added?
+      options:
+        - Added automatically
+        - Configured manually under "Devices"
+        - Not added at all
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: e.g. 1.5.1
+    validations:
+      required: true
+  - type: input
+    id: homebridge-version
+    attributes:
+      label: Homebridge and Homebridge UI version
+      placeholder: e.g. Homebridge 2.5.0, Homebridge UI 5.30.1
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: e.g. 22.12.0
+  - type: input
+    id: system
+    attributes:
+      label: System
+      placeholder: e.g. Synology DSM 7, Raspberry Pi OS, Docker
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        The log around the time of the problem, ideally with the debug mode of the child bridge enabled
+        (Homebridge UI → *Plugins* → ⋮ on this plugin → *Child Bridge Config* → *Debug Mode*).
+        Remove IP addresses, serial numbers or names you don't want to share.
+      render: text
+  - type: textarea
+    id: config
+    attributes:
+      label: Plugin configuration
+      description: The JSON of this plugin's settings (Homebridge UI → *Plugins* → ⋮ → *JSON Config*), if relevant.
+      render: json

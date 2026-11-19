@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an idea for the plugin.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a private hobby project: ideas are welcome, but there is no guarantee that they will be implemented.
+        Note that Apple Home limits what a TV accessory can show and do (see [Apple Home](https://github.com/tplnet/homebridge-heos-multiroom-audio/blob/main/docs/apple-home.md)).
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like the plugin to do?
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: What for?
+      description: The situation in which you would use it.
+  - type: input
+    id: device
+    attributes:
+      label: Device model(s)
+      placeholder: e.g. Denon Home 250
