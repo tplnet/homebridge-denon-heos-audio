@@ -2,7 +2,20 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
-## 1.5.1-beta.6 (2026-11-19)
+## 1.5.1-beta.7 (2026-11-19)
+
+### Fixed
+
+- Hybrid (e.g. Marantz Cinema 60): an input changed on the receiver itself (front panel, remote, HDMI-CEC) now shows up in the Home app. HEOS doesn't report such a change, AVR Control does; the plugin maps the AVR Control input (e.g. `AUX1`, `BD`, `GAME1`) to the device's HEOS input. For music sources (network, Bluetooth) the current source is read from HEOS.
+- *Next* / *previous track* on a source without tracks (radio station, input): the device refuses the command; this is now an info message in the log instead of an error with a stack trace.
+
+### Changed
+
+- Documentation: the *Back* / *Info* / arrow buttons of the Control Center remote have no function (TV menu buttons). Test results of the device tests added to the test checklist.
+
+Contains the changes of 1.5.1-beta.6 (not published).
+
+## 1.5.1-beta.6 (2026-11-19, not published)
 
 ### Changed
 

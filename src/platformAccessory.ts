@@ -4,7 +4,7 @@ import type { DenonAudioPlatform } from "./platform.js";
 
 import { DOMParser } from "@xmldom/xmldom";
 import { PromiseTimeoutException } from "./promiseTimeoutException.js";
-import { DefaultInput, IDenonClient, Playing, RaceStatus, ResponseTimeoutException } from "./denonClient.js";
+import { CommandFailedException, DefaultInput, IDenonClient, Playing, RaceStatus, ResponseTimeoutException } from "./denonClient.js";
 import * as DenonProtocol from "./denonProtocol.js";
 import * as CustomLogging from "./customLogging.js";
 import type { DeviceConfig, InputConfig } from "./config.js";
@@ -617,6 +617,11 @@ export class DenonAudioAccessory {
     try {
       await this.denonClient.setPlayNext();
     } catch (error) {
+      if (error instanceof CommandFailedException) {
+        // the device refuses skipping for sources without tracks (radio stations, inputs) - not an error of the plugin
+        this.log.info(`${this.name}: the current source doesn't support skipping to the next track (e.g. a radio station or an input).`);
+        return;
+      }
       this.log.error(`An error occured while setting play next for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -627,6 +632,11 @@ export class DenonAudioAccessory {
     try {
       await this.denonClient.setPlayPrevious();
     } catch (error) {
+      if (error instanceof CommandFailedException) {
+        // the device refuses skipping for sources without tracks (radio stations, inputs) - not an error of the plugin
+        this.log.info(`${this.name}: the current source doesn't support skipping to the previous track (e.g. a radio station or an input).`);
+        return;
+      }
       this.log.error(`An error occured while setting play previous for ${this.name}.`, error);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }

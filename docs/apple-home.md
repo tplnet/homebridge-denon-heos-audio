@@ -53,5 +53,6 @@ Repeat these steps for every device. You only have to do it once per device. Upd
 | Control Center → Remote → volume buttons on your iPhone | Volume up / down by `volumeStepSize` |
 | Remote → centre button / play-pause | Play / pause (HEOS CLI, Hybrid) |
 | Remote → left / right | Previous / next track (HEOS CLI, Hybrid) |
+| Remote → *Back*, *Info*, up / down | No function (TV menu buttons; a speaker has no menu) |
 | Siri, scenes and automations | Power and inputs |
 | Homebridge UI (*Speaker* tile) or apps that show all accessory settings (e.g. Eve, Controller for HomeKit) | Set the volume directly, mute / unmute |

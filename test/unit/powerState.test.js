@@ -1,19 +1,42 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 // HAP-NodeJS is "@homebridge/hap-nodejs" in Homebridge 2.x and "hap-nodejs" in Homebridge 1.x
-const hap = await import("@homebridge/hap-nodejs").catch(() => import("hap-nodejs"));
+const hap = await import("@homebridge/hap-nodejs").catch(
+  () => import("hap-nodejs"),
+);
 
 import { DenonAudioAccessory } from "../../dist/platformAccessory.js";
 
-const silentLog = { debug() {}, info() {}, success() {}, warn() {}, error() {}, log() {}, prefix: "test" };
+const silentLog = {
+  debug() {},
+  info() {},
+  success() {},
+  warn() {},
+  error() {},
+  log() {},
+  prefix: "test",
+};
 
 function createAccessory() {
-  const platform = { api: { hap }, Service: hap.Service, Characteristic: hap.Characteristic };
-  const accessory = new hap.Accessory("Test Speaker", hap.uuid.generate("power-state-test"));
+  const platform = {
+    api: { hap },
+    Service: hap.Service,
+    Characteristic: hap.Characteristic,
+  };
+  const accessory = new hap.Accessory(
+    "Test Speaker",
+    hap.uuid.generate("power-state-test"),
+  );
   const handler = new DenonAudioAccessory(
     platform,
     accessory,
-    { name: "Test Speaker", serialNumber: "S", ip: "127.0.0.1", controlProtocol: "HEOSCLI", powerOnFavorite: 0 },
+    {
+      name: "Test Speaker",
+      serialNumber: "S",
+      ip: "127.0.0.1",
+      controlProtocol: "HEOSCLI",
+      powerOnFavorite: 0,
+    },
     silentLog,
   );
   // the device still reports the old state right after switching
@@ -53,15 +76,24 @@ describe("power state after switching", () => {
     const { handler } = createAccessory();
     handler.denonClient.getPower = async () => false; // device: still stopped
     let finish;
-    handler.denonClient.setPower = () => new Promise((resolve) => (finish = resolve));
+    handler.denonClient.setPower = () =>
+      new Promise((resolve) => (finish = resolve));
 
     // resolves although the device hasn't finished switching
     await handler.setActive(hap.Characteristic.Active.ACTIVE);
-    assert.equal(await handler.getActive(), true, "requested state while switching");
+    assert.equal(
+      await handler.getActive(),
+      true,
+      "requested state while switching",
+    );
 
     // intermediate state reported by the device while the favorite is being started
     handler.callbackActive(false);
-    assert.equal(await handler.getActive(), true, "intermediate state is ignored");
+    assert.equal(
+      await handler.getActive(),
+      true,
+      "intermediate state is ignored",
+    );
 
     finish(true);
     await handler.powerChange;
@@ -77,14 +109,33 @@ describe("power state after switching", () => {
     await handler.setActive(hap.Characteristic.Active.ACTIVE);
     await handler.powerChange;
     assert.equal(await handler.getActive(), false);
-    assert.equal(handler.tvService.getCharacteristic(hap.Characteristic.Active).value, hap.Characteristic.Active.INACTIVE);
+    assert.equal(
+      handler.tvService.getCharacteristic(hap.Characteristic.Active).value,
+      hap.Characteristic.Active.INACTIVE,
+    );
   });
 
   it("rejects an invalid power on favorite", () => {
-    const platform = { api: { hap }, Service: hap.Service, Characteristic: hap.Characteristic };
+    const platform = {
+      api: { hap },
+      Service: hap.Service,
+      Characteristic: hap.Characteristic,
+    };
     const accessory = new hap.Accessory("X", hap.uuid.generate("x"));
     assert.throws(
-      () => new DenonAudioAccessory(platform, accessory, { name: "X", serialNumber: "X", ip: "127.0.0.1", controlProtocol: "HEOSCLI", powerOnFavorite: -1 }, silentLog),
+      () =>
+        new DenonAudioAccessory(
+          platform,
+          accessory,
+          {
+            name: "X",
+            serialNumber: "X",
+            ip: "127.0.0.1",
+            controlProtocol: "HEOSCLI",
+            powerOnFavorite: -1,
+          },
+          silentLog,
+        ),
       /Power on favorite/,
     );
   });
@@ -93,7 +144,38 @@ describe("power state after switching", () => {
 describe("services", () => {
   it("links the speaker to the TV (one tile in the Home app)", () => {
     const { handler } = createAccessory();
-    assert.ok(handler.tvService.linkedServices.includes(handler.speakerService));
-    assert.equal(handler.tvService.linkedServices.filter((s) => s === handler.speakerService).length, 1);
+    assert.ok(
+      handler.tvService.linkedServices.includes(handler.speakerService),
+    );
+    assert.equal(
+      handler.tvService.linkedServices.filter(
+        (s) => s === handler.speakerService,
+      ).length,
+      1,
+    );
+  });
+});
+
+describe("skipping tracks", () => {
+  it("a source without tracks (device refuses) is logged as info, not as error", async () => {
+    const { CommandFailedException } =
+      await import("../../dist/denonClient.js");
+    const { handler } = createAccessory();
+    const infos = [];
+    const errors = [];
+    handler.log = {
+      info: (m) => infos.push(m),
+      error: (m) => errors.push(m),
+      debug() {},
+      warn() {},
+      success() {},
+      log() {},
+    };
+    handler.denonClient.setPlayNext = async () => {
+      throw new CommandFailedException("player/play_next");
+    };
+    await handler.setPlayNext();
+    assert.equal(errors.length, 0);
+    assert.match(infos[0], /doesn't support skipping to the next track/);
   });
 });

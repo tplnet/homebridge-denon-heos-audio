@@ -1,4 +1,9 @@
-import { DefaultInput, IDenonClient, Playing, RaceStatus } from "./denonClient.js";
+import {
+  DefaultInput,
+  IDenonClient,
+  Playing,
+  RaceStatus,
+} from "./denonClient.js";
 import { DenonClientAvrControl } from "./denonClientAvrControl.js";
 import { DenonClientHeosCli } from "./denonClientHeosCli.js";
 import { ControlMode } from "./controlMode.js";
@@ -8,10 +13,82 @@ export class DenonClientHybrid implements IDenonClient {
   public readonly serialNumber: string;
   public readonly name: string;
   public readonly defaultInputs = DenonClientHeosCli.DEFAULT_INPUT_SOURCES;
-  public readonly displayOnlyInputs = DenonClientHeosCli.DISPLAY_ONLY_INPUT_SOURCES;
+  public readonly displayOnlyInputs =
+    DenonClientHeosCli.DISPLAY_ONLY_INPUT_SOURCES;
 
   private readonly clientAvrControl;
   private readonly clientHeosCli;
+  private readonly debugLog: (message: string, ...parameters: any[]) => void;
+  private readonly inputUpdateCallback?: (input: string) => void;
+  /** HEOS input ids of the device (from getInputSources), used to map AVR Control input codes. */
+  private knownInputIds: string[] = [];
+
+  /**
+   * AVR Control input codes (SI…) whose HEOS input id differs from the lower-case code.
+   * Several candidates: the first one the device offers is used.
+   */
+  private static readonly AVR_TO_HEOS_INPUTS: Record<string, string[]> = {
+    BD: ["bluray"],
+    "CBL/SAT": ["cable_sat"],
+    "SAT/CBL": ["cable_sat"],
+    SAT: ["cable_sat"],
+    MPLAY: ["mediaplayer"],
+    TV: ["tvaudio", "tv"],
+    GAME: ["game"],
+    GAME1: ["game", "game1"],
+    GAME2: ["game2"],
+    "8K": ["aux_8k"],
+    PHONO: ["phono"],
+    CD: ["cd"],
+    DVD: ["dvd"],
+    TUNER: ["tuner"],
+    HDRADIO: ["hdradio"],
+  };
+
+  /** AVR Control input codes of HEOS music sources (streaming, Bluetooth, USB …): HEOS knows the actual source. */
+  private static readonly AVR_STREAMING_INPUTS = [
+    "NET",
+    "BT",
+    "USB",
+    "USB/IPOD",
+    "IPOD",
+    "IPD",
+    "SERVER",
+    "IRADIO",
+    "IRP",
+    "FAVORITES",
+    "SPOTIFY",
+    "AIRPLAY",
+    "FVP",
+    "MXPORT",
+  ];
+
+  /**
+   * HEOS input id candidates for an input code reported by AVR Control (e.g. "AUX1" → ["aux1"]).
+   * Returns an empty array for HEOS music sources, which are taken from HEOS instead.
+   */
+  public static heosInputCandidates(avrInput: string): string[] {
+    const code = avrInput.trim().toUpperCase();
+    if (DenonClientHybrid.AVR_STREAMING_INPUTS.includes(code)) {
+      return [];
+    }
+    return DenonClientHybrid.AVR_TO_HEOS_INPUTS[code] ?? [code.toLowerCase()];
+  }
+
+  /**
+   * HEOS input id for an input code reported by AVR Control, or undefined if HEOS has to be asked.
+   * Prefers a candidate the device actually offers; without a known input list the first candidate is used.
+   */
+  public static heosInputFromAvrInput(
+    avrInput: string,
+    knownInputIds: string[],
+  ): string | undefined {
+    const candidates = DenonClientHybrid.heosInputCandidates(avrInput);
+    if (knownInputIds.length === 0) {
+      return candidates[0];
+    }
+    return candidates.find((candidate) => knownInputIds.includes(candidate));
+  }
 
   constructor(
     serialNumber: string,
@@ -25,6 +102,9 @@ export class DenonClientHybrid implements IDenonClient {
     volumeUpdateCallback?: (volume: number) => void,
     inputUpdateCallback?: (input: string) => void,
   ) {
+    this.debugLog = debugLogCallback ?? (() => {});
+    this.inputUpdateCallback = inputUpdateCallback;
+    // HEOS doesn't report an input changed at the receiver itself, AVR Control does ("SI…").
     this.clientAvrControl = new DenonClientAvrControl(
       serialNumber,
       name,
@@ -35,6 +115,9 @@ export class DenonClientHybrid implements IDenonClient {
       powerUpdateCallback,
       undefined,
       undefined,
+      inputUpdateCallback
+        ? (avrInput) => this.onAvrInputChanged(avrInput)
+        : undefined,
     );
     this.clientHeosCli = new DenonClientHeosCli(
       serialNumber,
@@ -53,7 +136,9 @@ export class DenonClientHybrid implements IDenonClient {
   }
 
   public isConnected(): boolean {
-    return this.clientAvrControl.isConnected() || this.clientHeosCli.isConnected();
+    return (
+      this.clientAvrControl.isConnected() || this.clientHeosCli.isConnected()
+    );
   }
 
   public getPower(): Promise<boolean> {
@@ -112,7 +197,36 @@ export class DenonClientHybrid implements IDenonClient {
     return this.clientHeosCli.setInput(inputID);
   }
 
-  public getInputSources(): Promise<DefaultInput[] | undefined> {
-    return this.clientHeosCli.getInputSources();
+  public async getInputSources(): Promise<DefaultInput[] | undefined> {
+    const inputs = await this.clientHeosCli.getInputSources();
+    this.knownInputIds = inputs.map((input) => input.inputID);
+    return inputs;
+  }
+
+  private onAvrInputChanged(avrInput: string) {
+    const inputID = DenonClientHybrid.heosInputFromAvrInput(
+      avrInput,
+      this.knownInputIds,
+    );
+    if (inputID) {
+      this.debugLog(`Input changed on the receiver: ${avrInput} → ${inputID}`);
+      this.inputUpdateCallback?.(inputID);
+      return;
+    }
+    // a HEOS music source or an input HEOS doesn't offer: ask HEOS for the current source
+    this.clientHeosCli
+      .getInput()
+      .then((heosInput) => {
+        this.debugLog(
+          `Input changed on the receiver: ${avrInput} → ${heosInput} (from HEOS)`,
+        );
+        this.inputUpdateCallback?.(heosInput);
+      })
+      .catch((error) =>
+        this.debugLog(
+          `Could not read the current input after the receiver reported ${avrInput}:`,
+          error instanceof Error ? error.message : error,
+        ),
+      );
   }
 }
