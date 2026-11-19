@@ -107,7 +107,7 @@
             },
             "powerOnFavorite": {
               "title": "Power On Favorite",
-              "description": "HEOS CLI only: if a speaker has nothing to resume when it is switched on, this HEOS favorite is started (1 = first favorite in the HEOS app, up to 200). 0 = disabled. At startup the plugin warns if the favorite doesn't exist.",
+              "description": "HEOS CLI only: if a speaker has nothing to resume when it is switched on, this HEOS favorite is started (1 = first favorite in the HEOS app, up to 200). 0 = disabled. At startup the plugin warns if the favorite doesn't exist. Not used while a Power On Quick Select slot is set (Quick Select takes precedence).",
               "type": "integer",
               "required": false,
               "minimum": 0,
@@ -116,7 +116,7 @@
             },
             "powerOnQuickSelect": {
               "title": "Power On Quick Select",
-              "description": "HEOS CLI only: start this Quick Select slot of the device instead of the HEOS favorite when the speaker has nothing to resume (1–6, depending on the model, e.g. Denon Home 150: 1–3, Denon Home 300: 1–6). 0 = use the HEOS favorite. At startup the plugin warns if the slot doesn't exist.",
+              "description": "HEOS CLI only: start this Quick Select slot of the device instead of the HEOS favorite when the speaker has nothing to resume (1–6, depending on the model, e.g. Denon Home 150: 1–3, Denon Home 300: 1–6). 0 = use the HEOS favorite. At startup the plugin warns if the slot doesn't exist. Takes precedence over the Power On Favorite: while a slot is set, the favorite isn't used.",
               "type": "integer",
               "required": false,
               "minimum": 0,

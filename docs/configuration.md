@@ -23,7 +23,13 @@ The settings form of the Homebridge UI covers everything described here (in Engl
 **Why does "power" mean "playback" with HEOS CLI?** HEOS speakers have no real standby command. The plugin therefore treats "playing" as on and "stopped/paused" as off.
 Switching on resumes the last source. If there is nothing to resume (e.g. after the speaker was restarted or a streaming session ended), or playback doesn't start within 8 seconds, the first HEOS favorite is started, so switching on also works in scenes and automations. You can choose another favorite or turn this off with `powerOnFavorite`.
 
-> **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station). Without a favorite, a speaker that has nothing to resume can't be switched on from Apple Home.
+What is started when there is nothing to resume, in this order:
+
+1. the **Quick Select** slot of the device, if `powerOnQuickSelect` is set (1–6) – the favorite is then not used,
+2. otherwise the **HEOS favorite** `powerOnFavorite` (default: the first favorite),
+3. nothing, if both are `0` – a speaker without anything to resume then can't be switched on from Apple Home.
+
+> **Requirement:** at least one favorite in the HEOS app (*Music → Favorites*, e.g. a radio station), or a Quick Select slot stored on the device and set in `powerOnQuickSelect`. Without either, a speaker that has nothing to resume can't be switched on from Apple Home.
 
 **Hybrid** uses AVR Control for power and HEOS CLI for everything else. Pick it whenever discovery reports both protocols and you want real standby.
 
@@ -136,8 +142,8 @@ See [Apple Home](apple-home.md).
 | `devices[].volumeLimitEnabled` | no | `false` | Enables the volume limit. |
 | `devices[].volumeLimit` | no | `99` | 0–99. With a limit, 100 % in the Home app equals this value on the device. |
 | `devices[].volumeStepSize` | no | `2` | 1–10. Volume change per press of the volume buttons in the Remote. |
-| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (position in the favorite list of the HEOS app, *Music → Favorites*: 1 = first, up to 200; 0 = disabled). The favorite must exist in the HEOS app. Also used for automatically added devices. |
-| `devices[].powerOnQuickSelect` | no | `0` | HEOS CLI only: Quick Select slot of the device (the numbered buttons, e.g. 1–3 on a Denon Home 150, 1–6 on a Denon Home 300) that is started instead of the HEOS favorite when the speaker has nothing to resume. 0 = use the HEOS favorite. |
+| `devices[].powerOnFavorite` | no | `1` | HEOS CLI only: HEOS favorite that is started when the speaker is switched on but has nothing to resume (position in the favorite list of the HEOS app, *Music → Favorites*: 1 = first, up to 200; 0 = disabled). The favorite must exist in the HEOS app. Also used for automatically added devices. Not used while `powerOnQuickSelect` is set. |
+| `devices[].powerOnQuickSelect` | no | `0` | HEOS CLI only: Quick Select slot of the device (the numbered buttons, e.g. 1–3 on a Denon Home 150, 1–6 on a Denon Home 300) that is started instead of the HEOS favorite when the speaker has nothing to resume. 0 = use the HEOS favorite. Takes precedence over `powerOnFavorite`. |
 | `devices[].inputs` | no | `[]` | Inputs to show in the Home app, see [Inputs](#inputs). |
 | `devices[].inputs[].inputID` | yes | | Input ID (depends on the protocol, see below). Entries without input ID or name are ignored. |
 | `devices[].inputs[].name` | yes | | Name shown in the Home app. |

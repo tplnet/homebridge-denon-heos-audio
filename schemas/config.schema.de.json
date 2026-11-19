@@ -107,7 +107,7 @@
             },
             "powerOnFavorite": {
               "title": "Favorit beim Einschalten",
-              "description": "Nur HEOS CLI: Hat ein Lautsprecher beim Einschalten nichts fortzusetzen, wird dieser HEOS-Favorit gestartet (1 = erster Favorit in der HEOS-App, bis 200). 0 = aus. Beim Start warnt das Plugin, wenn es den Favoriten nicht gibt.",
+              "description": "Nur HEOS CLI: Hat ein Lautsprecher beim Einschalten nichts fortzusetzen, wird dieser HEOS-Favorit gestartet (1 = erster Favorit in der HEOS-App, bis 200). 0 = aus. Beim Start warnt das Plugin, wenn es den Favoriten nicht gibt. Wird nicht verwendet, solange Quick Select beim Einschalten gesetzt ist (Quick Select hat Vorrang).",
               "type": "integer",
               "required": false,
               "minimum": 0,
@@ -116,7 +116,7 @@
             },
             "powerOnQuickSelect": {
               "title": "Quick Select beim Einschalten",
-              "description": "Nur HEOS CLI: Statt des HEOS-Favoriten diesen Quick-Select-Platz des Geräts starten, wenn der Lautsprecher beim Einschalten nichts fortzusetzen hat (1–6, je nach Modell, z. B. Denon Home 150: 1–3, Denon Home 300: 1–6). 0 = HEOS-Favorit verwenden. Beim Start warnt das Plugin, wenn es den Platz nicht gibt.",
+              "description": "Nur HEOS CLI: Statt des HEOS-Favoriten diesen Quick-Select-Platz des Geräts starten, wenn der Lautsprecher beim Einschalten nichts fortzusetzen hat (1–6, je nach Modell, z. B. Denon Home 150: 1–3, Denon Home 300: 1–6). 0 = HEOS-Favorit verwenden. Beim Start warnt das Plugin, wenn es den Platz nicht gibt. Hat Vorrang vor dem Favoriten beim Einschalten: Solange ein Platz gesetzt ist, wird der Favorit nicht verwendet.",
               "type": "integer",
               "required": false,
               "minimum": 0,

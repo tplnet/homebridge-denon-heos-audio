@@ -43,7 +43,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 ## 2. Automatic setup
 
 - [x] With `autoAddDiscoveredDevices` enabled, every discovered device is added with its HEOS name (log: `Automatically adding discovered device …`).
-- [ ] Home Amp and Cinema 60 are added as `HYBRID`, the Denon Home 150 / 250 as `HEOSCLI`.
+- [x] Cinema 60 is added as `HYBRID`, the Denon Home 150 / 250 as `HEOSCLI` (the Home Amp is configured manually with `HEOSCLI`).
 - [x] Manually configured devices keep their manual settings (log: `… is configured manually. Using the manual configuration.`).
 - [ ] Devices in `excludedSerialNumbers` are not added.
 - [ ] Moving a device from automatic to manual configuration keeps it paired in the Home app.
@@ -106,7 +106,8 @@ Note: HEOS player ids can be negative (Dining Room, Garage, Kids Room). Control 
 - [x] Dropdowns in the settings form don't make the form move with the mouse (`orderable: false`).
 - [x] The settings form opens and saves without "Config validation failed" (1.3.4).
 - [ ] A power on favorite that doesn't exist (e.g. 150) is reported as a warning at startup (1.3.4).
-- [ ] *Power On Quick Select* on a Denon Home 150: switching on with nothing to resume starts the slot (log: `starting Quick Select …`); slot 5 is reported as missing at startup (1.4.0).
+- [x] *Power On Quick Select* slot 5 on a Denon Home 150 is reported as missing at startup (the device reports 3 slots) (1.4.0).
+- [ ] *Power On Quick Select* on a Denon Home 150: switching on with nothing to resume starts the slot (log: `starting Quick Select …`) (1.4.0).
 
 ## Reporting
 

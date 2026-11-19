@@ -2,6 +2,14 @@
 
 All notable changes of this fork. The fork is based on [hov3rcraft/homebridge-denon-heos-audio](https://github.com/hov3rcraft/homebridge-denon-heos-audio) 1.0.0-beta.1.
 
+## 1.5.1-beta.6 (2026-11-19)
+
+### Changed
+
+- Settings form and documentation explain the order when switching on a HEOS CLI speaker with nothing to resume: the *Power On Quick Select* slot takes precedence over the *Power On Favorite*; with both at 0 nothing is started.
+
+No changes to the plugin code.
+
 ## 1.5.1-beta.5 (2026-11-19)
 
 ### Fixed
