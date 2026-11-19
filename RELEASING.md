@@ -46,13 +46,28 @@ Every change is published as a **beta** first. A regular release is only made wh
 3. The Homebridge UI offers newer betas to users who already run a beta of this plugin (it looks for the dist-tag `beta`), and to users who enabled betas for this plugin.
 4. **Release:** when the betas have been tested, write a `## 1.5.0 (date)` section that combines the changes of all its betas (the beta sections stay below it), then `npm version 1.5.0`, push and approve. Users of the beta get the regular version as an update.
 
-Install a beta for testing: Homebridge UI → *Plugins* → ⋮ on this plugin → *Manage Version* → choose the beta, or in the Homebridge storage directory `npm install @tplnet/homebridge-denon-heos-audio@beta`. Back to the regular version: choose the latest regular version the same way, or `npm install @tplnet/homebridge-denon-heos-audio@latest`.
+Install a beta for testing: Homebridge UI → *Plugins* → ⋮ on this plugin → *Manage Version* → choose the beta, or in the Homebridge storage directory `npm install @tplnet/homebridge-heos-multiroom-audio@beta`. Back to the regular version: choose the latest regular version the same way, or `npm install @tplnet/homebridge-heos-multiroom-audio@latest`.
 
 ## One-time setup
 
-1. The first version was published manually (`npm login`, `npm publish`), because npm only allows Trusted Publishing for an existing package.
+The package was renamed from `@tplnet/homebridge-denon-heos-audio` to `@tplnet/homebridge-heos-multiroom-audio` (1.5.0). npm only allows Trusted Publishing for a package that exists, so a new package name needs one manual publish:
+
+1. Publish a placeholder once (in an empty folder, with 2FA):
+
+   ```bash
+   mkdir /tmp/placeholder && cd /tmp/placeholder
+   npm init -y --scope=@tplnet >/dev/null
+   npm pkg set name=@tplnet/homebridge-heos-multiroom-audio version=0.0.0-stage description="Placeholder for the Trusted Publishing setup"
+   npm publish --access public --tag stage
+   npm deprecate @tplnet/homebridge-heos-multiroom-audio@0.0.0-stage "Placeholder, not a usable version"
+   ```
+
 2. **npmjs.com** → package → **Settings** → **Trusted Publisher** → **GitHub Actions**, same as for homebridge-tahoma:
-   user `tplnet`, repository `homebridge-denon-heos-audio`, workflow `publish.yml`, environment **empty**, permission **stage only**.
+   user `tplnet`, repository `homebridge-heos-multiroom-audio`, workflow `publish.yml`, environment **empty**, permission **stage only**.
 3. **Publishing access**: *Require two-factor authentication and disallow tokens*.
+4. After the first real version is approved: point `latest` to it while there is no regular version yet, so that new installs don't get the placeholder:
+   `npm dist-tag add @tplnet/homebridge-heos-multiroom-audio@<version> latest`.
+5. Deprecate the old package with a pointer to the new one:
+   `npm deprecate @tplnet/homebridge-denon-heos-audio "Renamed to @tplnet/homebridge-heos-multiroom-audio – see https://github.com/tplnet/homebridge-heos-multiroom-audio#switching-from-tplnethomebridge-denon-heos-audio"`
 
 No npm token is stored in GitHub and no GitHub environment is needed: the approval on npm with 2FA / passkey is the release gate.

@@ -1,6 +1,6 @@
-# @tplnet/homebridge-denon-heos-audio
+# @tplnet/homebridge-heos-multiroom-audio
 
-Maintained fork of hov3rcraft/homebridge-denon-heos-audio ("Homebridge Denon & Marantz HEOS (tplnet)"), platform name `DenonHeosAudio`. Controls Denon / Marantz HEOS speakers, the Denon Home Amp and AV receivers from Apple Home. License GPL-3.0 (from the original project).
+Maintained fork of hov3rcraft/homebridge-denon-heos-audio, renamed to "Homebridge HEOS Multiroom-Audio (tplnet)" (npm `@tplnet/homebridge-heos-multiroom-audio`, repo `tplnet/homebridge-heos-multiroom-audio`; formerly `@tplnet/homebridge-denon-heos-audio`), platform name `DenonHeosAudio`. Controls Denon / Marantz HEOS speakers, the Denon Home Amp and AV receivers from Apple Home. License GPL-3.0 (from the original project).
 
 ## Commands
 - `npm run lint`, `npm run build`, `npm test` (builds and runs the unit tests in `test/unit`, no device needed)
@@ -19,14 +19,16 @@ Maintained fork of hov3rcraft/homebridge-denon-heos-audio ("Homebridge Denon & M
 - The plugin collects no data and only talks to devices in the local network (README "Privacy"); keep it that way.
 - Never put real test data (device names such as the maintainer's room names, serial numbers, IP addresses, HEOS player ids) into the repository, tests or docs; use invented values (e.g. `192.0.2.x`, `BLT012345678`).
 - **Beta first, release on request:** every change is published as a beta first (`X.Y.Z-beta.N`, npm dist-tag `beta`, pre-release on GitHub; see RELEASING.md). A regular release (`X.Y.Z`, `latest`) is only made when Timo asks for it. While unreleased betas exist, ask him regularly (e.g. after he reports test results, or when a session starts or ends) whether a release should be made.
+- The platform name `DenonHeosAudio` never changes (existing configurations and child bridges depend on it), also not when the plugin is renamed.
+- Name and search: "Denon" and "Marantz" must stay findable (npm description and keywords, GitHub topics/About, README intro).
 - Default branch is `main` (not `master`). CHANGELOG headings before 1.3.3 have no date; new ones use `## X.Y.Z (YYYY-MM-DD)`.
 
 ## Rules for all tplnet Homebridge projects
 
-These apply to `@tplnet/homebridge-tahoma`, `@tplnet/overkiz-client`, `homebridge-tahoma-local` and `@tplnet/homebridge-denon-heos-audio`. Keep the four projects consistent: a change to the release or check process in one of them goes into all of them.
+These apply to `@tplnet/homebridge-tahoma`, `@tplnet/overkiz-client`, `homebridge-tahoma-local` and `@tplnet/homebridge-heos-multiroom-audio`. Keep the four projects consistent: a change to the release or check process in one of them goes into all of them.
 
 ### Language and wording
-- Code, comments, README, CHANGELOG and commit messages in English. No German translation of the plugin (exception for now: the German settings form of `@tplnet/homebridge-denon-heos-audio`).
+- Code, comments, README, CHANGELOG and commit messages in English. No German translation of the plugin (exception for now: the German settings form of `@tplnet/homebridge-heos-multiroom-audio`).
 - User-facing text says "Apple Home", not "HomeKit" (README, settings schema, log messages, execution labels). Technical code comments may keep "HomeKit".
 
 ### README

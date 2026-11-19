@@ -1,21 +1,21 @@
 {
-  "name": "@tplnet/homebridge-denon-heos-audio",
-  "displayName": "Homebridge Denon & Marantz HEOS (tplnet)",
+  "name": "@tplnet/homebridge-heos-multiroom-audio",
+  "displayName": "Homebridge HEOS Multiroom-Audio (tplnet)",
   "type": "module",
   "version": "1.4.1-beta.1",
-  "description": "Denon and Marantz HEOS devices in Apple Home: Denon Home speakers, Home Amp and AV receivers (e.g. Marantz Cinema, Denon AVR). Power, volume, inputs, play/pause, automatic discovery.",
+  "description": "HEOS multiroom audio in Apple Home: Denon and Marantz HEOS speakers, amplifiers and AV receivers (Denon Home, Home Amp, Marantz Cinema, Denon AVR, CEOL). Power, volume, inputs, play/pause, automatic discovery.",
   "author": "tplnet",
   "contributors": [
     "hov3rcraft (original author, https://github.com/hov3rcraft)"
   ],
   "license": "GPL-3.0-only",
-  "homepage": "https://github.com/tplnet/homebridge-denon-heos-audio#readme",
+  "homepage": "https://github.com/tplnet/homebridge-heos-multiroom-audio#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tplnet/homebridge-denon-heos-audio.git"
+    "url": "git+https://github.com/tplnet/homebridge-heos-multiroom-audio.git"
   },
   "bugs": {
-    "url": "https://github.com/tplnet/homebridge-denon-heos-audio/issues"
+    "url": "https://github.com/tplnet/homebridge-heos-multiroom-audio/issues"
   },
   "publishConfig": {
     "access": "public",
@@ -24,12 +24,20 @@
   "keywords": [
     "homebridge-plugin",
     "homebridge",
+    "heos",
+    "heos-multiroom",
+    "multiroom",
+    "multi-room",
+    "multiroom-audio",
     "denon",
     "marantz",
-    "heos",
+    "denon-heos",
+    "marantz-heos",
     "denon-home",
     "home-amp",
     "marantz-cinema",
+    "denon-avr",
+    "marantz-avr",
     "avr",
     "av-receiver",
     "receiver",
@@ -37,8 +45,11 @@
     "speaker",
     "soundbar",
     "ceol",
+    "music",
+    "audio",
     "apple-home",
     "homekit",
+    "siri",
     "tv",
     "avrcontrol",
     "heoscli",

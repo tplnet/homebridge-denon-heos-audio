@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/tplnet/homebridge-denon-heos-audio/main/docs/images/icon.png" width="128" alt="Homebridge Denon & Marantz HEOS icon">
+  <img src="https://raw.githubusercontent.com/tplnet/homebridge-heos-multiroom-audio/main/docs/images/icon.png" width="128" alt="Homebridge HEOS Multiroom-Audio icon">
 </p>
 
-# Homebridge Denon & Marantz HEOS (tplnet)
+# Homebridge HEOS Multiroom-Audio (tplnet)
 
-[![npm](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
-[![CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml)
-[![Compatibility & CVE check](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml/badge.svg)](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml)
-[![npm beta](https://img.shields.io/npm/v/@tplnet/homebridge-denon-heos-audio/beta?label=beta)](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio?activeTab=versions)
-[![License](https://img.shields.io/npm/l/@tplnet/homebridge-denon-heos-audio)](LICENSE)
+[![npm](https://img.shields.io/npm/v/@tplnet/homebridge-heos-multiroom-audio)](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio)
+[![CI](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/ci.yml)
+[![Compatibility & CVE check](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/compat.yml/badge.svg)](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/compat.yml)
+[![npm beta](https://img.shields.io/npm/v/@tplnet/homebridge-heos-multiroom-audio/beta?label=beta)](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio?activeTab=versions)
+[![License](https://img.shields.io/npm/l/@tplnet/homebridge-heos-multiroom-audio)](LICENSE)
 
-Package: [`@tplnet/homebridge-denon-heos-audio`](https://www.npmjs.com/package/@tplnet/homebridge-denon-heos-audio)
+Package: [`@tplnet/homebridge-heos-multiroom-audio`](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio) (formerly `@tplnet/homebridge-denon-heos-audio`, see [switching](#switching-from-tplnethomebridge-denon-heos-audio))
 
-Control your **Denon and Marantz HEOS speakers, amplifiers and AV receivers** from Apple Home.
+**HEOS** is the multiroom audio system of **Denon** and **Marantz**. This plugin brings your HEOS speakers, amplifiers and AV receivers – e.g. Denon Home, Denon Home Amp, Marantz Cinema, Denon AVR – into Apple Home.
 
 Each device appears in the Home app as a TV accessory, so you can:
 
@@ -82,19 +82,31 @@ If a device configured with *HEOS CLI* also supports AVR Control, the log mentio
 
 ## Installation
 
-**Homebridge UI:** go to **Plugins**, search for `@tplnet/homebridge-denon-heos-audio` and click **Install**. Restart Homebridge afterwards.
+**Homebridge UI:** go to **Plugins**, search for `@tplnet/homebridge-heos-multiroom-audio` and click **Install**. Restart Homebridge afterwards.
 
 **Terminal:** run in the Homebridge storage directory (e.g. `/var/lib/homebridge`, or `/volume1/homebridge` on a Synology NAS):
 
 ```bash
-npm install @tplnet/homebridge-denon-heos-audio
+npm install @tplnet/homebridge-heos-multiroom-audio
 ```
 
 Requirements: Homebridge 1.8 or newer (2.x supported), Node.js 22.12+, 24 or 26.
 
 ### Beta versions
 
-New features and fixes are published as a **beta** first (e.g. `1.5.0-beta.1`) and become a regular version after they have been tested. Betas are not offered to users of the regular version. To try one: Homebridge UI → *Plugins* → ⋮ on this plugin → *Manage Version* → choose the beta, or run `npm install @tplnet/homebridge-denon-heos-audio@beta` in the Homebridge storage directory. While you run a beta, the Homebridge UI offers newer betas and later the regular version as updates. Betas can contain errors – please report them as an [issue](https://github.com/tplnet/homebridge-denon-heos-audio/issues).
+New features and fixes are published as a **beta** first (e.g. `1.5.0-beta.1`) and become a regular version after they have been tested. Betas are not offered to users of the regular version. To try one: Homebridge UI → *Plugins* → ⋮ on this plugin → *Manage Version* → choose the beta, or run `npm install @tplnet/homebridge-heos-multiroom-audio@beta` in the Homebridge storage directory. While you run a beta, the Homebridge UI offers newer betas and later the regular version as updates. Betas can contain errors – please report them as an [issue](https://github.com/tplnet/homebridge-heos-multiroom-audio/issues).
+
+### Switching from @tplnet/homebridge-denon-heos-audio
+
+This plugin was renamed from `@tplnet/homebridge-denon-heos-audio` to `@tplnet/homebridge-heos-multiroom-audio` (version 1.5.0). The platform name `DenonHeosAudio` and your configuration stay the same, and the devices keep their pairing in Apple Home. The two packages must not be installed at the same time:
+
+1. Remove the old package **in the terminal**, in the Homebridge storage directory (removing it in the UI may also delete its configuration):
+
+   ```bash
+   npm uninstall @tplnet/homebridge-denon-heos-audio
+   ```
+
+2. Install `@tplnet/homebridge-heos-multiroom-audio` as described above and restart Homebridge.
 
 ### Switching from the original plugin
 
@@ -352,16 +364,16 @@ Usually an old Homebridge process is still running (e.g. after several restarts 
 **A device is added automatically although I don't want it in Apple Home.**
 Add its serial number to `excludedSerialNumbers` and restart Homebridge. Then remove it from the Home app.
 
-**Getting more details:** enable debug logging for Homebridge (or `consoleLogEnabled`) and include the log when [opening an issue](https://github.com/tplnet/homebridge-denon-heos-audio/issues).
+**Getting more details:** enable debug logging for Homebridge (or `consoleLogEnabled`) and include the log when [opening an issue](https://github.com/tplnet/homebridge-heos-multiroom-audio/issues).
 
 ## Compatibility and security
 
 This plugin is kept compatible with the **newest Homebridge release** and free of **known vulnerabilities (CVEs)**:
 
-- **Weekly and on every dependency change** the [Compatibility & CVE check](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/compat.yml) workflow
+- **Weekly and on every dependency change** the [Compatibility & CVE check](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/compat.yml) workflow
   - runs `npm audit` – any known vulnerability in the runtime dependencies fails the check,
   - builds the plugin and starts it with **homebridge@latest** and **homebridge@beta** on Node.js 22, 24 and 26 with simulated HEOS and AVR Control devices (`npm run smoke`): the plugin must load, be accepted as compatible (`engines`), connect to the devices, read their inputs and run without errors, HAP warnings or deprecation warnings.
-- **On every push** the [CI](https://github.com/tplnet/homebridge-denon-heos-audio/actions/workflows/ci.yml) workflow runs lint, the unit tests and the smoke test, also with **Homebridge 1.x** (on Node.js 22 and 24).
+- **On every push** the [CI](https://github.com/tplnet/homebridge-heos-multiroom-audio/actions/workflows/ci.yml) workflow runs lint, the unit tests and the smoke test, also with **Homebridge 1.x** (on Node.js 22 and 24).
 - **Every release** runs the same CVE and Homebridge checks before the version is staged on npm – a release with a known vulnerability or an incompatibility is not published.
 - **Dependabot** opens weekly pull requests for dependency and GitHub Actions updates.
 
@@ -391,8 +403,8 @@ It only talks to your HEOS devices in the local network:
 ## Development
 
 ```bash
-git clone https://github.com/tplnet/homebridge-denon-heos-audio.git
-cd homebridge-denon-heos-audio
+git clone https://github.com/tplnet/homebridge-heos-multiroom-audio.git
+cd homebridge-heos-multiroom-audio
 npm install          # also builds the plugin
 npm run lint
 npm test             # builds and runs the unit tests (no device needed)

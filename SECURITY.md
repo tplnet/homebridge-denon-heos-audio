@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest released version of `@tplnet/homebridge-denon-heos-audio` receives fixes. Please update before reporting.
+Only the latest released version of `@tplnet/homebridge-heos-multiroom-audio` receives fixes. Please update before reporting.
 
 ## How dependencies are checked
 
