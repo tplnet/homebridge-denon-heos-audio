@@ -10,7 +10,7 @@
 [![npm beta](https://img.shields.io/npm/v/@tplnet/homebridge-heos-multiroom-audio/beta?label=beta)](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio?activeTab=versions)
 [![License](https://img.shields.io/npm/l/@tplnet/homebridge-heos-multiroom-audio)](LICENSE)
 
-Package: [`@tplnet/homebridge-heos-multiroom-audio`](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio) (formerly `@tplnet/homebridge-denon-heos-audio`, see [switching](#switching-from-tplnethomebridge-denon-heos-audio))
+Package: [`@tplnet/homebridge-heos-multiroom-audio`](https://www.npmjs.com/package/@tplnet/homebridge-heos-multiroom-audio)
 
 **HEOS** is the multiroom audio system of **Denon** and **Marantz**. This plugin brings your HEOS speakers, amplifiers and AV receivers – e.g. Denon Home, Denon Home Amp, Marantz Cinema, Denon AVR – into Apple Home.
 
