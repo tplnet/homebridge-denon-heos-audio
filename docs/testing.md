@@ -46,7 +46,7 @@ Run Homebridge with debug logging (`homebridge -D` or `npm run watch`) and keep 
 - [x] Cinema 60 is added as `HYBRID`, the Denon Home 150 / 250 as `HEOSCLI` (the Home Amp is configured manually with `HEOSCLI`).
 - [x] Manually configured devices keep their manual settings (log: `… is configured manually. Using the manual configuration.`).
 - [ ] Devices in `excludedSerialNumbers` are not added.
-- [ ] Moving a device from automatic to manual configuration keeps it paired in the Home app.
+- [x] Moving a device from automatic to manual configuration keeps it paired in the Home app (Denon Home 150, 1.5.0).
 
 ## 3. Startup
 
