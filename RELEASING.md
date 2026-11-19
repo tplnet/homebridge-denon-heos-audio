@@ -57,10 +57,12 @@ The package was renamed from `@tplnet/homebridge-denon-heos-audio` to `@tplnet/h
    ```bash
    mkdir /tmp/placeholder && cd /tmp/placeholder
    npm init -y --scope=@tplnet >/dev/null
-   npm pkg set name=@tplnet/homebridge-heos-multiroom-audio version=0.0.0-stage description="Placeholder for the Trusted Publishing setup"
-   npm publish --access public --tag stage
-   npm deprecate @tplnet/homebridge-heos-multiroom-audio@0.0.0-stage "Placeholder, not a usable version"
+   npm pkg set name=@tplnet/homebridge-heos-multiroom-audio version=0.0.1-placeholder.0 description="Placeholder for the Trusted Publishing setup"
+   npm publish --access public --tag placeholder
+   npm deprecate @tplnet/homebridge-heos-multiroom-audio@0.0.1-placeholder.0 "Placeholder, not a usable version"
    ```
+
+   `0.0.0-stage` can't be used: npm reserves it (it appears automatically on packages that use staged publishing).
 
 2. **npmjs.com** → package → **Settings** → **Trusted Publisher** → **GitHub Actions**, same as for homebridge-tahoma:
    user `tplnet`, repository `homebridge-heos-multiroom-audio`, workflow `publish.yml`, environment **empty**, permission **stage only**.
